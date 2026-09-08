@@ -344,17 +344,21 @@ const TIMEZONE_CODES = {
   UTC: 'U-720',
 };
 
-/** 人数轮询使用的区服 → 模式列表(注:不含 hypermass,与 regions() 的可用性列表不一致——原实现如此)。 */
-const POLLED_MODES_BY_REGION = {
-  europe: ['domination', 'extreme', 'megasplit', 'novirus', 'instamerge'],
-  america: ['domination', 'novirus'],
-};
+  // 人数轮询使用的区服 → 模式列表(注:不含 hypermass,与 regions() 的可用性列表不一致——原实现如此)。
+  const POLLED_MODES_BY_REGION = {
+    europe: ['domination', 'extreme', 'megasplit', 'novirus', 'instamerge'],
+    america: ['domination', 'novirus'],
+    // 亚洲服(本地 C# 服):当前仅启用 extreme(模仿美服单/双模式行为)
+    asia: ['extreme'],
+  };
 
 const ALL_POLLED_MODES = ['domination', 'extreme', 'megasplit', 'novirus', 'instamerge'];
 
 /** 区服切换时的模式可用性列表(欧服含 hypermass,美服仅前两项)。 */
 const AMERICAN_MODES = ['domination', 'novirus'];
 const EUROPEAN_MODES = ['domination', 'extreme', 'megasplit', 'hypermass', 'novirus', 'instamerge'];
+// 亚洲服:当前仅启用 extreme(其余模式置灰禁用,模仿美服行为)
+const ASIAN_MODES = ['extreme'];
 
 /** 模式按钮 id(点击处理按此顺序绑定)。 */
 const MODE_IDS = ['domination', 'megasplit', 'extreme', 'instamerge', 'hypermass', 'novirus'];
@@ -394,6 +398,8 @@ export default class Menu {
       $('#europe').addClass('is-active');
     } else if (this.region === 'america') {
       $('#america').addClass('is-active');
+    } else if (this.region === 'asia') {
+      $('#asia').addClass('is-active');
     } else {
       // 未知区服回落 europe 并写回存储
       this.region = 'europe';
@@ -471,7 +477,9 @@ export default class Menu {
     }
     const poll = async () => {
       const regionHost = gameConnection.regionHosts[this.region];
-      const base = regionHost ? 'https://' + regionHost : '';
+      // 亚洲服:本地 C# 服的 server-info 挂在 HTTP 控制端口 4002(游戏端口只收 WS)
+      const base = regionHost === 'localhost' ? 'http://localhost:4002'
+        : regionHost ? 'https://' + regionHost : '';
       for (const mode of modes) {
         try {
           const response = await fetch(base + '/server-info/' + mode);
@@ -617,7 +625,8 @@ export default class Menu {
   regions() {
     const { $, store, menuForm, gameConnection } = this.systems;
     const applyModeAvailability = region => {
-      const available = region === 'america' ? AMERICAN_MODES : EUROPEAN_MODES;
+      const available = region === 'america' ? AMERICAN_MODES
+        : region === 'asia' ? ASIAN_MODES : EUROPEAN_MODES;
       // 怪癖:始终遍历完整欧服列表(而非当前区服列表)
       EUROPEAN_MODES.forEach(mode => {
         const el = document.getElementById(mode);
@@ -656,6 +665,8 @@ export default class Menu {
     applyModeAvailability(this.region);
     $('#europe').on('click', () => selectRegion('europe', '#europe'));
     $('#america').on('click', () => selectRegion('america', '#america'));
+    // 亚洲服(本地 C# 服):AS 按钮原版为禁用占位,本地解锁接入
+    $('#asia').on('click', () => selectRegion('asia', '#asia'));
   }
 
   modes() {

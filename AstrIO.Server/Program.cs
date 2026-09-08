@@ -6,6 +6,10 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Logging.SetMinimumLevel(LogLevel.Information);
 // GameLoop 注册为单例（WsHandler 静态方法通过 DI 解析）
 builder.Services.AddSingleton<GameLoop>();
+// server-info 人数轮询来自本地页面源(http://localhost:8123),需 CORS
+builder.Services.AddCors(o => o.AddPolicy("poll", p => p
+    .WithOrigins("http://localhost:8123", "http://127.0.0.1:8123")
+    .AllowAnyMethod()));
 // 多端口监听：与 Node 私服完全一致（3000 domination / 3001 megasplit /
 // 3050 extreme / 4002 HTTP 静态+API / 3005 chat 桩）
 builder.WebHost.UseUrls(
@@ -14,6 +18,7 @@ builder.WebHost.UseUrls(
 
 var app = builder.Build();
 var gameLoop = app.Services.GetRequiredService<GameLoop>();
+app.UseCors("poll"); // server-info 人数轮询的跨域放行(须在路由匹配前)
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
 // 静态文件：AstrIO.Client/wwwroot（客户端独立项目）
@@ -46,13 +51,17 @@ _ = gameLoop.RunAsync(loopCts.Token);
 // WebSocket：/ws/{mode} + 根路径（客户端 localPorts 直连 ws://host:port/ 不带 /ws 前缀）。
 // 注意：Map("/") 会匹配所有路径，必须先放行非 WebSocket 请求让静态文件中间件工作。
 app.Map("/ws/{mode}", (HttpContext ctx) => WsHandler(ctx, ctx.GetRouteValue("mode")?.ToString() ?? "extreme"));
-app.Map("/", async (HttpContext ctx) =>
+app.Map("/{*path}", async (HttpContext ctx) =>
 {
     if (ctx.WebSockets.IsWebSocketRequest)
     {
-        // 从监听端口推断模式：3001=megasplit 3050=extreme 3000=domination
+        // 客户端 asia 区连接形如 ws://localhost:3050/extreme(带模式 path);
+        // 优先取 path 段,非法值回落到端口推断:3001=megasplit 3050=extreme 3000=domination
+        var pathMode = ctx.Request.Path.Value?.Trim('/') ?? "";
         var port = ctx.Connection.LocalPort;
-        var mode = port switch { 3001 => "megasplit", 3050 => "extreme", _ => "domination" };
+        var portMode = port switch { 3001 => "megasplit", 3050 => "extreme", _ => "domination" };
+        var mode = new[] { "domination", "megasplit", "extreme", "novirus", "instamerge", "ffa" }.Contains(pathMode)
+            ? pathMode : portMode;
         await WsHandler(ctx, mode);
         return;
     }
@@ -87,6 +96,8 @@ app.MapPost("/api/mass", async (HttpContext ctx) =>
     return Results.Json(new { mass = gameLoop.WorldRef.SpawnMass });
 });
 app.MapGet("/server-info/{mode}", (string mode) =>
-    Results.Json(new { players = 1, spectators = 0 }));
+    Results.Json(new { players = 1, spectators = 0 }))
+    // 人数轮询来自本地页面源(8123),需要 CORS
+    .RequireCors("poll");
 
 app.Run();

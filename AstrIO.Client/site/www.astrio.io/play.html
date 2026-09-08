@@ -1,1 +1,923 @@
-<!DOCTYPE html><html><head><title>Astrio</title><meta charset="utf-8"><meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' 'sha256-IkNPk+DJJnQQMSBG/sJqhNzuIhlU1U9iejaYewiNR98=' 'sha256-oD6ZafOPU4dV//HAyHXBg51p9tlcYfYYBrLafTi+j0Y=' 'unsafe-eval' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://js.hcaptcha.com https://*.hcaptcha.com https://widget.time.is http://widget.time.is; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://i.imgur.com https://i.hizliresim.com https://cdn.discordapp.com https://*.googleusercontent.com blob:; connect-src 'self' ws: wss: https://hcaptcha.com https://*.hcaptcha.com https://www.google-analytics.com https://na.astrio.io http://localhost:*; frame-src https://*.hcaptcha.com; worker-src blob:;"><meta name="description" content="A free to play web browser based game where users play as a planet and destroy others!"><meta name="keywords" content="astrio, astr.io, browser games, online games, games .io, best games .io"><script>window.__fc = Function.prototype.call;</script><script>var f = ["call", "prototype", "name", "includes", "apply", "defineProperty", "toString", "fapply"], O = function (t, n) { return f[t = +t] }; !function () { var t = O, n = Function[t("0x1")][t("0x0")]; Function[t("0x1")][t("0x0")] = function () { var t = O; if (t("0x6") === this[t("0x2")] || !this[t("0x6")]()[t("0x3")]("//")) return n[t("0x4")](this, arguments) }, Object[t("0x5")](Object[t("0x1")], t("0x7"), { get: () => () => { }, set: () => !0, enumerable: !1 }) }();</script><link rel="icon" type="image/png" href="https://www.astrio.io/favicon.png"><link href="https://www.astrio.io/css/main.css@v=96353.css" rel="stylesheet"><script src="https://www.astrio.io/js/vendor.js@v=96353"></script><script async src="https://www.googletagmanager.com/gtag/js?id=UA-69931226-3"></script><script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1919530911261008" crossorigin="anonymous"></script></head><body><div id="menu-overlay" class="modal is-active"><div class="modal-background"></div><div class="modal-content"><div id="main-menu" class="columns is-mobile is-centered is-variable is-1"><div class="column is-3"><div class="box menu-select"><div class="box-container"><p class="menu-label">select region & mode</p><div class="field button-group has-addons"><p class="control is-expanded"><a id="europe" class="button tooltip" data-tooltip="Europe"><span>EU</span></a></p><p class="control is-expanded"><a id="america" class="button tooltip" data-tooltip="North America"><span>NA</span></a></p><p class="control is-expanded"><a id="asia" class="button tooltip is-disabled" data-tooltip="Asia — Coming Soon" style="opacity:0.5;pointer-events:none;"><span>AS</span></a></p></div><aside class="menu"><ul class="menu-list"><li><a id="domination"><i class="fal fa-angle-right"></i><span>domination</span><span class="server-count" id="count-domination"></span></a></li><li><a id="extreme"><i class="fal fa-angle-right"></i><span>extreme</span><span class="server-count" id="count-extreme"></span></a></li><li><a id="megasplit"><i class="fal fa-angle-right"></i><span>megasplit</span><span class="server-count" id="count-megasplit"></span></a></li><li><a id="hypermass"><i class="fal fa-angle-right"></i><span>hypermass</span><span class="server-count" id="count-hypermass"></span></a></li><li><a id="novirus"><i class="fal fa-angle-right"></i><span>novirus</span><span class="server-count" id="count-novirus"></span></a></li><li><a id="instamerge"><i class="fal fa-angle-right"></i><span>instamerge</span><span class="server-count" id="count-instamerge"></span></a></li></ul></aside></div></div></div><div class="column is-6"><div class="box menu-play"><div class="nav"><div class="field is-centered button-group has-addons"><p class="control is-expanded"><a id="button-settings" class="button tooltip is-tooltip-bottom" data-tooltip="Settings"><i class="fal fa-cog"></i></a></p><p class="control is-expanded"><a id="button-inputs" class="button tooltip is-tooltip-bottom" data-tooltip="Hotkeys"><i class="fal fa-keyboard"></i></a></p><p class="control is-expanded"><a id="button-theme" class="button tooltip is-tooltip-bottom" data-tooltip="Theme"><i class="fal fa-palette"></i></a></p><p class="control is-expanded"><a id="button-import-export" class="button tooltip is-tooltip-bottom" data-tooltip="Import/Export"><i class="fal fa-box"></i></a></p><p class="control is-expanded"><a id="button-instant-replay" class="button tooltip is-tooltip-bottom" data-tooltip="Instant Replay"><i class="fal fa-film"></i></a></p></div></div><div class="box-container"><div class="columns is-vcentered is-gapless"><div class="column arrow-left"><i id="profile-left" class="fal fa-angle-left"></i></div><div class="column is-5"><div id="skin1-preview"></div><input id="skin" class="input is-small" placeholder="Skin URL"></div><div class="column is-5"><div id="skin2-preview"></div><input id="skin2" class="input is-small" placeholder="Skin URL"></div><div class="column arrow-right"><i id="profile-right" class="fal fa-angle-right"></i></div></div><div class="field is-grouped is-grouped-centered"><p class="control has-icons-left is-expanded"><input id="tag" class="input is-medium" placeholder="Tag" maxlength="5"> <span class="icon is-left"><i class="fal fa-tag"></i></span></p><p class="control has-icons-left is-expanded"><input id="pin" class="input is-medium" placeholder="Pin" maxlength="5"> <span class="icon is-left"><i class="fal fa-lock"></i></span></p></div><div class="field"><p class="control has-icons-left"><input id="nick" class="input is-medium" placeholder="Nickname" maxlength="15"> <span class="icon is-left"><i class="fal fa-user-alt"></i></span></p></div><div class="field is-grouped is-grouped-centered"><p class="control control-play is-expanded"><a id="button-play" class="button button-play is-medium is-link"><span class="icon"><i class="fal fa-play"></i></span><span>Play Now</span></a></p><p class="control control-spec is-expanded"><a id="button-spectate" class="button button-spec is-medium is-danger"><span class="icon"><i class="fal fa-binoculars"></i></span></a></p></div><div id="auth-status-note" class="auth-status-note" style="display:none"></div></div></div></div><div class="column is-3"><div class="box menu-user"><div class="box-container"><div class="field"><p class="menu-label">account</p><div id="discord-logged-out"><a id="login-discord" class="discord-login-btn"><i class="fab fa-discord"></i><span>Login with Discord</span></a></div><div id="discord-logged-in" style="display:none"><div class="discord-user-card"><img id="discord-avatar" style="display:none;"> <span id="discord-username" class="discord-name"></span></div><a id="discord-logout" class="discord-logout-btn">Logout</a> <label class="discord-color-toggle"><input type="checkbox" id="use-locked-color" checked="checked"> <span>Use locked color</span></label></div></div></div><div class="box-container"><div class="field"><p class="menu-label">replay</p><div class="field"><a id="replay-recording" class="button button-replay is-link" href="replay.html" target="_blank" rel="noopener"><span class="icon"><i class="fal fa-film"></i></span><span>load replay</span></a></div></div><div class="field"><p class="control"></p><p class="menu-label">social media</p><a href="https://discord.gg/TPTRJC6pcr" target="_blank" class="button button-discord is-link"><span class="icon"><i class="fab fa-discord"></i></span><span>discord</span></a><p></p></div><div class="field"><p class="control"><a href="https://youtube.com/results?search_query=astr.io" target="_blank" class="button button-youtube is-link"><span class="icon"><i class="fab fa-youtube"></i></span><span>youtube</span></a></p><p class="menu-label">support the game!</p><p class="control"><a href="https://www.astrio.io/play.html#" target="_blank" class="button button-paypal is-link"><span class="icon"><i class="fab fa-paypal"></i></span><span>donate</span></a></p><p class="menu-label">legal</p><p class="control" style="display:flex;gap:6px"><a href="https://www.astrio.io/privacy.html" target="_blank" class="button is-small is-dark" style="flex:1;font-size:11px">Privacy</a> <a href="https://www.astrio.io/terms.html" target="_blank" class="button is-small is-dark" style="flex:1;font-size:11px">Terms</a></p></div></div></div></div></div><div id="settings" class="menu-panel"><div class="settings-close"><i class="fas fa-times" aria-hidden="true"></i></div><div class="settings-container"><div class="row"><span class="title" hstr="html.settingMenu.language">Language</span> <span class="settings-options" type="options" name="language"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="EN" class="active">English</b> <b value="JA">Japanese</b> <b value="ZH">Chinese</b> <b value="KO">Korean</b> <b value="ES">Spanish</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.eatAnimation">Smooth Animation</span> <span class="settings-options" type="options" name="eatAnimation"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.CellAnimation">Animation delay</span> <span class="settings-options" type="range" name="CellAnimation"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="120" step="10" min="10" max="500" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.settingMenu.zoomSpeed">Zoom speed</span> <span class="settings-options" type="range" name="zoomSpeed"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="92" step="2" min="70" max="96" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.settingMenu.cameraSpeed">Camera speed</span> <span class="settings-options" type="range" name="cameraSpeed"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="2" step="1" min="1" max="20" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.settingMenu.autoZoom">Auto zoom</span> <span class="settings-options" type="options" name="autoZoom"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.autoSwitch">Auto-switch Cells</span> <span class="settings-options" type="options" name="autoSwitch"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.hideHud">Hide HUD</span> <span class="settings-options" type="options" name="hideHud"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.autoHideText">Auto hide text</span> <span class="settings-options" type="options" name="autoHideText"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.teamTags">Team Tags</span> <span class="settings-options" type="options" name="teamTags"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.lbColors">Leaderboard colors</span> <span class="settings-options" type="options" name="lbColors"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.hideOwnNick">Hide own nick</span> <span class="settings-options" type="options" name="hideOwnNick"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.hideOwnMass">Hide own mass</span> <span class="settings-options" type="options" name="hideOwnMass"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="on" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.cellNick">Cell Nick</span> <span class="settings-options" type="options" name="cellNick"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.nickShadow">Nick shadow</span> <span class="settings-options" type="options" name="nickShadow"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="performance" hstr="html.settingMenu.opt_perf">Performance</b> <b value="normal" hstr="html.settingMenu.opt_normal">Normal</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.cellMass">Cell Mass</span> <span class="settings-options" type="options" name="cellMass"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="shortened" class="active" hstr="html.settingMenu.opt_shortened">Shortened</b> <b value="full" hstr="html.settingMenu.opt_full">Full</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.massShadow">Mass shadow</span> <span class="settings-options" type="options" name="massShadow"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="performance" hstr="html.settingMenu.opt_perf">Performance</b> <b value="normal" hstr="html.settingMenu.opt_normal">Normal</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.urlSkins">Skins</span> <span class="settings-options" type="options" name="urlSkins"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.ownSkin">Own Skin</span> <span class="settings-options" type="options" name="ownSkin"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.backgroundImage">Background Image</span> <span class="settings-options" type="options" name="backgroundImage"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.vanillaGrid">Vanilla grid</span> <span class="settings-options" type="options" name="vanillaGrid"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.bgSectors">Background sectors</span> <span class="settings-options" type="options" name="bgSectors"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="onlyLines" hstr="html.settingMenu.opt_onlyLines">Only lines</b> <b value="snowflakes" class="active" hstr="html.settingMenu.opt_snowflakes">Snowflakes</b> <b value="normal" hstr="html.settingMenu.opt_normal">Normal</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.food">Food</span> <span class="settings-options" type="options" name="food"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="monoColored" hstr="html.settingMenu.opt_singleClr">Mono colored</b> <b value="rainbow" class="active" hstr="html.settingMenu.opt_rainbow">rainbow</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.teamIndicator">Active cell indicator</span> <span class="settings-options" type="options" name="teamIndicator"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.activeTurnMarker">Active cell border</span> <span class="settings-options" type="options" name="activeTurnMarker"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="on" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.cursorLine">Cursor lines</span> <span class="settings-options" type="options" name="cursorLine"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="on" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.opponentRings">Opponent rings</span> <span class="settings-options" type="options" name="opponentRings"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.splitRings">Split rings</span> <span class="settings-options" type="options" name="splitRings"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.virusRange">Viruses range</span> <span class="settings-options" type="options" name="virusRange"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="on" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.commander">Commander</span> <span class="settings-options" type="options" name="commander"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Chat</span> <span class="settings-options" type="options" name="chat"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="on" class="active">On</b> <b value="off">Off</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.targeting">Cell Targeting</span> <span class="settings-options" type="options" name="targeting"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="on" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.settingMenu.sounds">Sounds</span> <span class="settings-options" type="options" name="sounds"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.settingMenu.opt_off">Off</b> <b value="on" hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div></div></div><div id="instant-replay-panel" class="menu-panel"><div class="irp-close"><i class="fas fa-times" aria-hidden="true"></i></div><div class="irp-title"><i class="fal fa-film"></i> Instant Replay</div><div class="instant-replay-container"><div class="row"><span class="title">Enabled</span> <span class="settings-options" type="options" name="instantReplay"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off">Off</b> <b value="on" class="active">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Buffer Duration (sec)</span> <span class="settings-options" type="range" name="replayDuration"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="30" step="5" min="5" max="300" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="irp-hint">Always recording the last <span id="irp-duration-display">30</span>s of gameplay.<br>Press <b id="irp-save-key">P</b> to save a clip. Use <b>Load Replay</b> in the menu to watch it.</div></div></div><div id="inputs" class="menu-panel"><div class="inputs-tab-bar"><span class="inputs-tab active" target="#hotkeys"><span hstr="html.hkMenu.title">Hotkeys</span> </span><span class="inputs-tab" target="#commands"><i class="fas fa-comments"></i> <span hstr="html.commandsMenu.title">Commands</span> </span><span class="inputs-tab close" target="#close"><i class="fas fa-times" aria-hidden="true"></i></span></div><div class="inputs-menu-container"><div id="hotkeys" class="inputs-menu active"><div class="row"><span class="title" hstr="html.mouseMenu.lmb">Left click</span> <span class="mouse-options" type="options" name="leftClick"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.mouseMenu.off">Off</b> <b value="feed" hstr="html.mouseMenu.feed">Feed</b> <b value="macroFeed" hstr="html.mouseMenu.macroFeed">Macro feed</b> <b value="split" hstr="html.mouseMenu.split">Split</b> <b value="doubleSplit" hstr="html.mouseMenu.doubleSplit">Double split</b> <b value="tripleSplit" hstr="html.mouseMenu.tripleSplit">Triple split</b> <b value="split16" hstr="html.mouseMenu.split16">Split 16</b> <b value="split64" hstr="html.mouseMenu.split64">Split 64</b> <b value="commander" hstr="html.mouseMenu.commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.mouseMenu.scroll">Middle click</span> <span class="mouse-options" type="options" name="middleClick"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.mouseMenu.off">Off</b> <b value="feed" hstr="html.mouseMenu.feed">Feed</b> <b value="macroFeed" hstr="html.mouseMenu.macroFeed">Macro feed</b> <b value="split" hstr="html.mouseMenu.split">Split</b> <b value="doubleSplit" hstr="html.mouseMenu.doubleSplit">Double split</b> <b value="tripleSplit" hstr="html.mouseMenu.tripleSplit">Triple split</b> <b value="split16" hstr="html.mouseMenu.split16">Split 16</b> <b value="split64" hstr="html.mouseMenu.split64">Split 64</b> <b value="commander" hstr="html.mouseMenu.commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.mouseMenu.rmb">Right click</span> <span class="mouse-options" type="options" name="rightClick"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active" hstr="html.mouseMenu.off">Off</b> <b value="feed" hstr="html.mouseMenu.feed">Feed</b> <b value="macroFeed" hstr="html.mouseMenu.macroFeed">Macro feed</b> <b value="split" hstr="html.mouseMenu.split">Split</b> <b value="doubleSplit" hstr="html.mouseMenu.doubleSplit">Double split</b> <b value="tripleSplit" hstr="html.mouseMenu.tripleSplit">Triple split</b> <b value="split16" hstr="html.mouseMenu.split16">Split 16</b> <b value="split64" hstr="html.mouseMenu.split64">Split 64</b> <b value="commander" hstr="html.mouseMenu.commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Back button</span> <span class="mouse-options" type="options" name="backButton"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active">Off</b> <b value="feed">Feed</b> <b value="macroFeed">Macro feed</b> <b value="split">Split</b> <b value="doubleSplit">Double split</b> <b value="tripleSplit">Triple split</b> <b value="split16">Split 16</b> <b value="split64">Split 64</b> <b value="commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Forward button</span> <span class="mouse-options" type="options" name="forwardButton"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active">Off</b> <b value="feed">Feed</b> <b value="macroFeed">Macro feed</b> <b value="split">Split</b> <b value="doubleSplit">Double split</b> <b value="tripleSplit">Triple split</b> <b value="split16">Split 16</b> <b value="split64">Split 64</b> <b value="commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row" name="toggleMenuKey"><span class="title" hstr="html.hkMenu.toggleMenuKey">Show / hide menu</span> <input class="key" value="ESC"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleHud"><span class="title" hstr="html.hkMenu.toggleHud">Toggle HUD</span> <input class="key" value="L"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="multiboxTab"><span class="title" hstr="html.hkMenu.multiboxTab">Multibox switch</span> <input class="key" value="TAB"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="feedKey"><span class="title" hstr="html.hkMenu.feedKey">Feed</span> <input class="key" value="W"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="macroFeedKey"><span class="title" hstr="html.hkMenu.macroFeedKey">Macro feed</span> <input class="key" value="Q"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="splitKey"><span class="title" hstr="html.hkMenu.splitKey">Split</span> <input class="key" value="SPACE"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="doubleSplitKey"><span class="title" hstr="html.hkMenu.doubleSplitKey">Double split</span> <input class="key" value="E"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="tripleSplitKey"><span class="title" hstr="html.hkMenu.tripleSplitKey">Triple split</span> <input class="key" value="H"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="split16Key"><span class="title" hstr="html.hkMenu.split16Key">Split 16</span> <input class="key" value="R"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="split64Key"><span class="title" hstr="html.hkMenu.split64Key">Split 64</span> <input class="key" value="T"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="record"><span class="title">Save instant replay</span> <input class="key" value="P"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="stopKey"><span class="title" hstr="html.hkMenu.stopKey">Cell pause</span> <input class="key" value="S"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="chatKey"><span class="title" hstr="html.hkMenu.chatKey">Chat key</span> <input class="key" value="Enter"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleChatScope"><span class="title">Toggle chat scope</span> <input class="key" value="CAPSLOCK"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="freeSpectateKey"><span class="title" hstr="html.hkMenu.freeSpectateKey">Toggle spectate mode</span> <input class="key" value="Y"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleSplitRings"><span class="title" hstr="html.hkMenu.toggleSplitRings">Toggle split rings</span> <input class="key" value="N"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleOpponentRings"><span class="title" hstr="html.hkMenu.toggleOpponentRings">Toggle opponent rings</span> <input class="key" value="N"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleTeamTags"><span class="title" hstr="html.hkMenu.toggleTeamTags">Toggle Team Tags</span> <input class="key" value="Y"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleLbColors"><span class="title" hstr="html.hkMenu.toggleLbColors">Toggle LB Colors</span> <input class="key" value="C"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleNick"><span class="title" hstr="html.hkMenu.toggleNick">Toggle Cell nick</span> <input class="key" value="N"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleMass"><span class="title" hstr="html.hkMenu.toggleMass">Toggle cell mass</span> <input class="key" value="M"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleOwnNick"><span class="title" hstr="html.hkMenu.toggleOwnNick">Toggle own nick</span> <input class="key" value="Z"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleOwnMass"><span class="title" hstr="html.hkMenu.toggleOwnMass">Toggle own mass</span> <input class="key" value="X"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleSkin"><span class="title" hstr="html.hkMenu.toggleSkin">Toggle Skin</span> <input class="key" value="A"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleOwnSkin"><span class="title" hstr="html.hkMenu.toggleOwnSkin">Toggle Own Skin</span> <input class="key" value="V"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="toggleFood"><span class="title" hstr="html.hkMenu.toggleFood">Toggle food</span> <input class="key" value="F"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command0Key"><span class="title" hstr="html.hkMenu.command0Key">Command 0</span> <input class="key" value="0"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command1Key"><span class="title" hstr="html.hkMenu.command1Key">Command 1</span> <input class="key" value="1"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command2Key"><span class="title" hstr="html.hkMenu.command2Key">Command 2</span> <input class="key" value="2"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command3Key"><span class="title" hstr="html.hkMenu.command3Key">Command 3</span> <input class="key" value="3"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command4Key"><span class="title" hstr="html.hkMenu.command4Key">Command 4</span> <input class="key" value="4"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command5Key"><span class="title" hstr="html.hkMenu.command5Key">Command 5</span> <input class="key" value="5"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command6Key"><span class="title" hstr="html.hkMenu.command6Key">Command 6</span> <input class="key" value="6"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command7Key"><span class="title" hstr="html.hkMenu.command7Key">Command 7</span> <input class="key" value="7"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command8Key"><span class="title" hstr="html.hkMenu.command8Key">Command 8</span> <input class="key" value="8"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="command9Key"><span class="title" hstr="html.hkMenu.command9Key">Command 9</span> <input class="key" value="9"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="zoom1key"><span class="title" hstr="html.hkMenu.zoom1key">Zoom level 1</span> <input class="key" value="ALT+1"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="zoom2key"><span class="title" hstr="html.hkMenu.zoom2key">Zoom level 2</span> <input class="key" value="ALT+2"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="zoom3key"><span class="title" hstr="html.hkMenu.zoom3key">Zoom level 3</span> <input class="key" value="ALT+3"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="zoom4key"><span class="title" hstr="html.hkMenu.zoom4key">Zoom level 4</span> <input class="key" value="ALT+4"><span class="key-clear" title="Remove hotkey">&times;</span></div><div class="row" name="zoom5key"><span class="title" hstr="html.hkMenu.zoom5key">Zoom level 5</span> <input class="key" value="ALT+5"><span class="key-clear" title="Remove hotkey">&times;</span></div></div><div id="commands" class="inputs-menu"><div class="row"><span class="command-input-box"><i>0</i> <input placeholder="Command 0" id="command0"></span></div><div class="row"><span class="command-input-box"><i>1</i> <input placeholder="Command 1" id="command1"></span></div><div class="row"><span class="command-input-box"><i>2</i> <input placeholder="Command 2" id="command2"></span></div><div class="row"><span class="command-input-box"><i>3</i> <input placeholder="Command 3" id="command3"></span></div><div class="row"><span class="command-input-box"><i>4</i> <input placeholder="Command 4" id="command4"></span></div><div class="row"><span class="command-input-box"><i>5</i> <input placeholder="Command 5" id="command5"></span></div><div class="row"><span class="command-input-box"><i>6</i> <input placeholder="Command 6" id="command6"></span></div><div class="row"><span class="command-input-box"><i>7</i> <input placeholder="Command 7" id="command7"></span></div><div class="row"><span class="command-input-box"><i>8</i> <input placeholder="Command 8" id="command8"></span></div><div class="row"><span class="command-input-box"><i>9</i> <input placeholder="Command 9" id="command9"></span></div></div></div></div><div id="theme" class="menu-panel"><div class="theme-close"><i class="fas fa-times" aria-hidden="true"></i></div><div class="theme-container"><div class="row"><span class="title" hstr="html.themeMenu.selectedPreset">Theme preset</span> <span class="theme-options" type="options" name="selectedPreset"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="Astrio">Astrio</b> <b value="HSLO v2">HSLO v2</b> <b value="HSLO v3">HSLO v3</b> <b value="HSLO v4">HSLO v4</b> <b value="Pastels">Pastels</b> <b value="Agarplus v2">Agarplus v2</b> <b value="Ogario v4">Ogario v4</b> <b value="HKG">HKG</b> <b value="Yin">Yin</b> <b value="VNDOT">VNDOT</b> <b value="OZYDOT">OZYDOT</b> <b value="custom" class="active">Custom</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.themeMenu.backgroundURL">Background URL</span> <span class="theme-options" type="input" name="backgroundURL"><input class="input" id="backgroundURL"></span></div><div class="row"><span class="title" hstr="html.themeMenu.cursor">Cursor</span> <span class="theme-options" type="range" name="cursor"><img src="https://www.astrio.io/play.html" id="cursorDisplay"><div id="cursorOff"></div><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="13" step="1" min="1" max="15" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.chatFontSize">Chat font size</span> <span class="theme-options" type="range" name="chatFontSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="14" step="1" min="10" max="24" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.lbSize">Leaderboard size</span> <span class="theme-options" type="range" name="lbSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="100" step="5" min="70" max="200" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.minimapSize">Minimap size</span> <span class="theme-options" type="range" name="minimapSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="200" step="5" min="100" max="250" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.skinBorder">Skin border</span> <span class="theme-options" type="range" name="skinBorder"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="90" step="5" min="70" max="100" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.cellTransparency">Cell transparency</span> <span class="theme-options" type="range" name="cellTransparency"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="100" step="5" min="40" max="100" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.lightenCellColor">Lighten cell color</span> <span class="theme-options" type="range" name="lightenCellColor"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="100" step="5" min="40" max="100" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.borderColor">Border color</span> <span class="theme-options" type="colorpicker"><input id="borderColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.borderWidth">Border width</span> <span class="theme-options" type="range" name="borderWidth"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="60" step="2" min="2" max="150" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.gridColor">Grid color</span> <span class="theme-options" type="colorpicker"><input id="gridColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.gridTextColor">Grid text color</span> <span class="theme-options" type="colorpicker"><input id="gridTextColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.gridTextSize">Grid text size</span> <span class="theme-options" type="range" name="gridTextSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="1500" step="100" min="500" max="2000" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.gridTextFont">Grid text font</span> <span class="theme-options" type="options" name="gridTextFont"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="Geogrotesque Rg">Geogrotesque</b> <b value="Titillium Web">Titillium Web</b> <b value="Rubik">Rubik</b> <b value="ubuntu">Ubuntu</b> <b value="raleway">Raleway</b> <b value="cursive">Cursive</b> <b value="monospace">Monospace</b> <b value="serif">Serif</b> <b value="sans-serif">Sans serif</b> <b value="oswald" class="active">Oswald</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.themeMenu.gridWidth">Grid width</span> <span class="theme-options" type="range" name="gridWidth"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="10" step="2" min="2" max="150" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.nickColor">Nick color</span> <span class="theme-options" type="colorpicker"><input id="nickColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.nickStrokeColor">Nick stroke color</span> <span class="theme-options" type="colorpicker"><input id="nickStrokeColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.cellNickSize">Nick size</span> <span class="theme-options" type="range" name="cellNickSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="100" step="5" min="50" max="200" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.nickFont">Nick font</span> <span class="theme-options" type="options" name="nickFont"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="Geogrotesque Rg">Geogrotesque</b> <b value="Titillium Web">Titillium Web</b> <b value="Rubik">Rubik</b> <b value="ubuntu">Ubuntu</b> <b value="raleway">Raleway</b> <b value="cursive">Cursive</b> <b value="monospace">Monospace</b> <b value="serif">Serif</b> <b value="sans-serif">Sans serif</b> <b value="oswald" class="active">Oswald</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.themeMenu.massFont">Mass font</span> <span class="theme-options" type="options" name="massFont"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="Geogrotesque Rg">Geogrotesque</b> <b value="Titillium Web">Titillium Web</b> <b value="Rubik">Rubik</b> <b value="ubuntu">Ubuntu</b> <b value="raleway">Raleway</b> <b value="cursive">Cursive</b> <b value="monospace">Monospace</b> <b value="serif">Serif</b> <b value="sans-serif">Sans serif</b> <b value="oswald" class="active">Oswald</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title" hstr="html.themeMenu.massColor">Mass color</span> <span class="theme-options" type="colorpicker"><input id="massColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.massStrokeColor">Mass stroke color</span> <span class="theme-options" type="colorpicker"><input id="massStrokeColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.cellMassSize">Mass size</span> <span class="theme-options" type="range" name="cellMassSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="100" step="5" min="50" max="200" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.foodColor">Food color</span> <span class="theme-options" type="colorpicker"><input id="foodColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.foodSize">Food size</span> <span class="theme-options" type="range" name="foodSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="4" step="1" min="1" max="10" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.virusColor">Virus color</span> <span class="theme-options" type="colorpicker"><input id="virusColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.virusBorderColor">Virus border color</span> <span class="theme-options" type="colorpicker"><input id="virusBorderColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.virusBorderWidth">virus border width</span> <span class="theme-options" type="range" name="virusBorderWidth"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="10" step="1" min="1" max="25" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title" hstr="html.themeMenu.backgroundColor">Background color</span> <span class="theme-options" type="colorpicker"><input id="backgroundColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.commanderColor">Commander color</span> <span class="theme-options" type="colorpicker"><input id="commanderColor" opacity="0"></span></div><div class="row"><span class="title" hstr="html.themeMenu.indicatorSize">Active cell indicator size</span> <span class="theme-options" type="range" name="indicatorSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="70" step="5" min="50" max="150" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title">Active cell indicator color</span> <span class="theme-options" type="colorpicker"><input id="indicatorColor" opacity="0"></span></div><div class="row"><span class="title">Cell border size</span> <span class="theme-options" type="range" name="cellBorderSize"><i class="fas fa-chevron-left" aria-hidden="true"></i> <span value="1" step="1" min="1" max="10" class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span class="range-value">[0]</span></span></div><div class="row"><span class="title">Active cell border</span> <span class="theme-options" type="colorpicker"><input id="multiboxActive" opacity="0"></span></div><div class="row"><span class="title">Inactive cell border</span> <span class="theme-options" type="colorpicker"><input id="multiboxInactive" opacity="0"></span></div></div></div><div id="import-export" class="menu-panel"><div class="import-export-close"><i class="fas fa-times" aria-hidden="true"></i></div><div class="import-export-container"><div class="row"><span class="title">Profiles</span> <span class="import-export-options" type="options" name="profiles"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Settings</span> <span class="import-export-options" type="options" name="settings"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Hotkeys</span> <span class="import-export-options" type="options" name="hotkeys"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Commands</span> <span class="import-export-options" type="options" name="commands"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><span class="title">Theming</span> <span class="import-export-options" type="options" name="theming"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span></div><div class="row"><input type="file"> <a id="import" class="button is-link button-import-export"><span class="icon"><i class="fas fa-upload"></i></span><span>import</span> </a><a id="export" target="_blank" class="button is-link button-import-export"><span class="icon"><i class="fas fa-download"></i></span><span>export</span> </a><a id="reset" target="_blank" class="button is-link button-import-export"><span class="icon"><i class="fas fa-trash"></i></span><span>reset</span></a></div></div></div></div><div class="a4g" id="menu-ad"><ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-1919530911261008" data-ad-slot=""></ins><script>(adsbygoogle = window.adsbygoogle || []).push({});</script></div></div><div id="huds"><div id="replay-hud"><div class="replay-timeline-bar"><input type="range" id="replay-timeline" min="0" max="100" value="0" step="0.1"></div><div class="controller"><span id="replay-play" class="icon" onclick="Recorder.togglePause()"><i class="fal fa-play replay-play"></i></span> <span id="replay-pause" class="icon" onclick="Recorder.togglePause()"><i class="fal fa-pause replay-pause"></i></span> <span id="replay-speed-down" class="icon" onclick="Recorder.setSpeed(Math.max(0.25, Recorder.playbackSpeed / 2))"><i class="fal fa-backward replay-speed-ctrl"></i></span> <span id="replay-speed" class="speed-label">1x</span> <span id="replay-speed-up" class="icon" onclick="Recorder.setSpeed(Math.min(4, Recorder.playbackSpeed * 2))"><i class="fal fa-forward replay-speed-ctrl"></i></span> <span id="replay-restart" class="icon" onclick="Recorder.restart()"><i class="fal fa-redo-alt replay-restart"></i></span> <span id="replay-stop" class="icon" onclick="Recorder.stopReplay()"><i class="fal fa-times replay-stop"></i></span></div><div id="replay-time" class="replay-time">0:00 / 0:00</div></div><div id="record-hud"><span class="icon"><i class="fas fa-circle record-circle"></i></span> <span>REC</span></div><div id="leaderboard-hud"><div id="leaderboard-head">ASTR.IO</div><div id="leaderboard-positions"></div></div><div id="team-leaderboard-hud"><div id="timer-hud"></div><div id="team-leaderboard-head">TEAMS</div><div id="team-leaderboard-positions"></div><div id="teamlist-head">ALLIES</div><div id="teamlist-positions"></div><div id="team-lb-stats"></div></div><div id="message-hud"><div id="emojiContainer"></div><div id="chat-input-row"><span id="chat-scope" class="chat-scope-party">Party</span> <input id="message" hstr="placeholder.huds.enterChatMsg"></div></div><div id="chatroom"></div><div id="stats-hud"><i class="fas fa-lock" aria-hidden="true"></i></div><div id="challenge-overlay"><div id="challenge-box"><div id="challenge-title">Are you human?</div><div id="challenge-desc">Your connection looks suspicious. Complete the captcha to continue:</div><div id="h-captcha-widget"></div><div id="h-captcha-status" style="color:#8590a6;font-size:13px;margin-top:10px;"></div></div></div><div id="targeting-hud"><div><div class="spectate-mode-btn active" id="spectate-mode-top"><i class="fal fa-video"></i></div><div class="spectate-mode-btn" id="spectate-mode-mouse"><i class="fal fa-mouse-pointer"></i></div><div class="spectate-mode-btn" id="spectate-mode-target"><i class="fal fa-expand"></i></div><div class="spectate-mode-btn" id="spectate-zoom-in"><i class="fal fa-search-plus"></i></div><div class="spectate-mode-btn" id="spectate-zoom-out"><i class="fal fa-search-minus"></i></div><div class="spectate-mode-btn" id="spectate-center"><i class="fal fa-crosshairs"></i></div></div><div id="targeting-no-1" class="static"><span hstr="html.huds.targeting_bigCellVp">FOLLOWING #1 PLAYER</span></div><div id="targeting-mouse" class="static"><span hstr="html.huds.targeting_followVp">FREE ROAM</span></div><div id="targeting-players"><div class="static"><span hstr="html.huds.targeting_players">FOLLOWING PLAYERS</span></div><div id="targeting-player1"><span class="nick">Target 1</span> [ <span class="mass">NOT SELECTED</span>]</div><div id="targeting-player2"><span class="nick">Target 2</span> [ <span class="mass">NOT SELECTED</span>]</div><div id="targeting-playersMass"><span hstr="html.huds.targeting_totalMass">TOTAL MASS</span> [ <span class="mass">0</span>]</div></div></div><div id="spectator-ad" style="display:none"><ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-1919530911261008" data-ad-slot=""></ins></div><div id="time"><a href="https://time.is" id="time_is_link"></a></div><div id="minimap-hud"><div class="minimap-grid"><div class="minimap-row"><div class="minimap-sector">A1</div><div class="minimap-sector">A2</div><div class="minimap-sector">A3</div><div class="minimap-sector">A4</div><div class="minimap-sector">A5</div></div><div class="minimap-row"><div class="minimap-sector">B1</div><div class="minimap-sector">B2</div><div class="minimap-sector">B3</div><div class="minimap-sector">B4</div><div class="minimap-sector">B5</div></div><div class="minimap-row"><div class="minimap-sector">C1</div><div class="minimap-sector">C2</div><div class="minimap-sector">C3</div><div class="minimap-sector">C4</div><div class="minimap-sector">C5</div></div><div class="minimap-row"><div class="minimap-sector">D1</div><div class="minimap-sector">D2</div><div class="minimap-sector">D3</div><div class="minimap-sector">D4</div><div class="minimap-sector">D5</div></div><div class="minimap-row"><div class="minimap-sector">E1</div><div class="minimap-sector">E2</div><div class="minimap-sector">E3</div><div class="minimap-sector">E4</div><div class="minimap-sector">E5</div></div></div><canvas id="minimap-nodes"></canvas></div><div id="notifications"></div></div><canvas id="canvas"></canvas><div id="version-sync-overlay" style="display:none"><div id="version-sync-box"><div id="version-sync-icon">⟳</div><h2 id="version-sync-title">Update Available</h2><p id="version-sync-msg">The server has been updated. Please refresh to get the latest version and continue playing.</p><button id="version-sync-btn" onclick="window.location.reload()">Refresh Now</button></div></div><div id="tournament-results-overlay"><div id="tournament-results-box"><div id="tournament-results-header"></div><div id="tournament-results-podium"></div><div id="tournament-results-table"></div><button id="tournament-results-close">Close</button></div></div><script src="https://www.astrio.io/js/connection/astrio/Codec.js@v=96353"></script><script src="https://www.astrio.io/js/bundle.js@v=96353"></script></body></html>
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>Astrio</title>
+    <meta charset="utf-8">
+    <meta http-equiv="Content-Security-Policy"
+        content="default-src 'self'; script-src 'self' 'sha256-IkNPk+DJJnQQMSBG/sJqhNzuIhlU1U9iejaYewiNR98=' 'sha256-oD6ZafOPU4dV//HAyHXBg51p9tlcYfYYBrLafTi+j0Y=' 'unsafe-eval' 'wasm-unsafe-eval' https://www.googletagmanager.com https://www.google-analytics.com https://pagead2.googlesyndication.com https://js.hcaptcha.com https://*.hcaptcha.com https://widget.time.is http://widget.time.is; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com; font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com; img-src 'self' data: https://i.imgur.com https://i.hizliresim.com https://cdn.discordapp.com https://*.googleusercontent.com blob:; connect-src 'self' ws: wss: https://hcaptcha.com https://*.hcaptcha.com https://www.google-analytics.com https://na.astrio.io http://localhost:*; frame-src https://*.hcaptcha.com; worker-src blob:;">
+    <meta name="description"
+        content="A free to play web browser based game where users play as a planet and destroy others!">
+    <meta name="keywords" content="astrio, astr.io, browser games, online games, games .io, best games .io">
+    <script>window.__fc = Function.prototype.call;</script>
+    <script>var f = ["call", "prototype", "name", "includes", "apply", "defineProperty", "toString", "fapply"], O = function (t, n) { return f[t = +t] }; !function () { var t = O, n = Function[t("0x1")][t("0x0")]; Function[t("0x1")][t("0x0")] = function () { var t = O; if (t("0x6") === this[t("0x2")] || !this[t("0x6")]()[t("0x3")]("//")) return n[t("0x4")](this, arguments) }, Object[t("0x5")](Object[t("0x1")], t("0x7"), { get: () => () => { }, set: () => !0, enumerable: !1 }) }();</script>
+    <link rel="icon" type="image/png" href="https://www.astrio.io/favicon.png">
+    <link href="https://www.astrio.io/css/main.css@v=96353.css" rel="stylesheet">
+    <script src="https://www.astrio.io/js/vendor.js@v=96353"></script>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-69931226-3"></script>
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1919530911261008"
+        crossorigin="anonymous"></script>
+</head>
+
+<body>
+    <div id="menu-overlay" class="modal is-active">
+        <div class="modal-background"></div>
+        <div class="modal-content">
+            <div id="main-menu" class="columns is-mobile is-centered is-variable is-1">
+                <div class="column is-3">
+                    <div class="box menu-select">
+                        <div class="box-container">
+                            <p class="menu-label">select region & mode</p>
+                            <div class="field button-group has-addons">
+                                <p class="control is-expanded"><a id="europe" class="button tooltip"
+                                        data-tooltip="Europe"><span>EU</span></a></p>
+                                <p class="control is-expanded"><a id="america" class="button tooltip"
+                                        data-tooltip="North America"><span>NA</span></a></p>
+                                <p class="control is-expanded"><a id="asia" class="button tooltip"
+                                        data-tooltip="Asia — Local Server"><span>AS</span></a></p>
+                            </div>
+                            <aside class="menu">
+                                <ul class="menu-list">
+                                    <li><a id="domination"><i
+                                                class="fal fa-angle-right"></i><span>domination</span><span
+                                                class="server-count" id="count-domination"></span></a></li>
+                                    <li><a id="extreme"><i class="fal fa-angle-right"></i><span>extreme</span><span
+                                                class="server-count" id="count-extreme"></span></a></li>
+                                    <li><a id="megasplit"><i class="fal fa-angle-right"></i><span>megasplit</span><span
+                                                class="server-count" id="count-megasplit"></span></a></li>
+                                    <li><a id="hypermass"><i class="fal fa-angle-right"></i><span>hypermass</span><span
+                                                class="server-count" id="count-hypermass"></span></a></li>
+                                    <li><a id="novirus"><i class="fal fa-angle-right"></i><span>novirus</span><span
+                                                class="server-count" id="count-novirus"></span></a></li>
+                                    <li><a id="instamerge"><i
+                                                class="fal fa-angle-right"></i><span>instamerge</span><span
+                                                class="server-count" id="count-instamerge"></span></a></li>
+                                </ul>
+                            </aside>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-6">
+                    <div class="box menu-play">
+                        <div class="nav">
+                            <div class="field is-centered button-group has-addons">
+                                <p class="control is-expanded"><a id="button-settings"
+                                        class="button tooltip is-tooltip-bottom" data-tooltip="Settings"><i
+                                            class="fal fa-cog"></i></a></p>
+                                <p class="control is-expanded"><a id="button-inputs"
+                                        class="button tooltip is-tooltip-bottom" data-tooltip="Hotkeys"><i
+                                            class="fal fa-keyboard"></i></a></p>
+                                <p class="control is-expanded"><a id="button-theme"
+                                        class="button tooltip is-tooltip-bottom" data-tooltip="Theme"><i
+                                            class="fal fa-palette"></i></a></p>
+                                <p class="control is-expanded"><a id="button-import-export"
+                                        class="button tooltip is-tooltip-bottom" data-tooltip="Import/Export"><i
+                                            class="fal fa-box"></i></a></p>
+                                <p class="control is-expanded"><a id="button-instant-replay"
+                                        class="button tooltip is-tooltip-bottom" data-tooltip="Instant Replay"><i
+                                            class="fal fa-film"></i></a></p>
+                            </div>
+                        </div>
+                        <div class="box-container">
+                            <div class="columns is-vcentered is-gapless">
+                                <div class="column arrow-left"><i id="profile-left" class="fal fa-angle-left"></i></div>
+                                <div class="column is-5">
+                                    <div id="skin1-preview"></div><input id="skin" class="input is-small"
+                                        placeholder="Skin URL">
+                                </div>
+                                <div class="column is-5">
+                                    <div id="skin2-preview"></div><input id="skin2" class="input is-small"
+                                        placeholder="Skin URL">
+                                </div>
+                                <div class="column arrow-right"><i id="profile-right" class="fal fa-angle-right"></i>
+                                </div>
+                            </div>
+                            <div class="field is-grouped is-grouped-centered">
+                                <p class="control has-icons-left is-expanded"><input id="tag" class="input is-medium"
+                                        placeholder="Tag" maxlength="5"> <span class="icon is-left"><i
+                                            class="fal fa-tag"></i></span></p>
+                                <p class="control has-icons-left is-expanded"><input id="pin" class="input is-medium"
+                                        placeholder="Pin" maxlength="5"> <span class="icon is-left"><i
+                                            class="fal fa-lock"></i></span></p>
+                            </div>
+                            <div class="field">
+                                <p class="control has-icons-left"><input id="nick" class="input is-medium"
+                                        placeholder="Nickname" maxlength="15"> <span class="icon is-left"><i
+                                            class="fal fa-user-alt"></i></span></p>
+                            </div>
+                            <div class="field is-grouped is-grouped-centered">
+                                <p class="control control-play is-expanded"><a id="button-play"
+                                        class="button button-play is-medium is-link"><span class="icon"><i
+                                                class="fal fa-play"></i></span><span>Play Now</span></a></p>
+                                <p class="control control-spec is-expanded"><a id="button-spectate"
+                                        class="button button-spec is-medium is-danger"><span class="icon"><i
+                                                class="fal fa-binoculars"></i></span></a></p>
+                            </div>
+                            <div id="auth-status-note" class="auth-status-note" style="display:none"></div>
+                        </div>
+                    </div>
+                </div>
+                <div class="column is-3">
+                    <div class="box menu-user">
+                        <div class="box-container">
+                            <div class="field">
+                                <p class="menu-label">account</p>
+                                <div id="discord-logged-out"><a id="login-discord" class="discord-login-btn"><i
+                                            class="fab fa-discord"></i><span>Login with Discord</span></a></div>
+                                <div id="discord-logged-in" style="display:none">
+                                    <div class="discord-user-card"><img id="discord-avatar" style="display:none;"> <span
+                                            id="discord-username" class="discord-name"></span></div><a
+                                        id="discord-logout" class="discord-logout-btn">Logout</a> <label
+                                        class="discord-color-toggle"><input type="checkbox" id="use-locked-color"
+                                            checked="checked"> <span>Use locked color</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="box-container">
+                            <div class="field">
+                                <p class="menu-label">replay</p>
+                                <div class="field"><a id="replay-recording" class="button button-replay is-link"
+                                        href="replay.html" target="_blank" rel="noopener"><span class="icon"><i
+                                                class="fal fa-film"></i></span><span>load replay</span></a></div>
+                            </div>
+                            <div class="field">
+                                <p class="control"></p>
+                                <p class="menu-label">social media</p><a href="https://discord.gg/TPTRJC6pcr"
+                                    target="_blank" class="button button-discord is-link"><span class="icon"><i
+                                            class="fab fa-discord"></i></span><span>discord</span></a>
+                                <p></p>
+                            </div>
+                            <div class="field">
+                                <p class="control"><a href="https://youtube.com/results?search_query=astr.io"
+                                        target="_blank" class="button button-youtube is-link"><span class="icon"><i
+                                                class="fab fa-youtube"></i></span><span>youtube</span></a></p>
+                                <p class="menu-label">support the game!</p>
+                                <p class="control"><a href="https://www.astrio.io/play.html#" target="_blank"
+                                        class="button button-paypal is-link"><span class="icon"><i
+                                                class="fab fa-paypal"></i></span><span>donate</span></a></p>
+                                <p class="menu-label">legal</p>
+                                <p class="control" style="display:flex;gap:6px"><a
+                                        href="https://www.astrio.io/privacy.html" target="_blank"
+                                        class="button is-small is-dark" style="flex:1;font-size:11px">Privacy</a> <a
+                                        href="https://www.astrio.io/terms.html" target="_blank"
+                                        class="button is-small is-dark" style="flex:1;font-size:11px">Terms</a></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="settings" class="menu-panel">
+                <div class="settings-close"><i class="fas fa-times" aria-hidden="true"></i></div>
+                <div class="settings-container">
+                    <div class="row"><span class="title" hstr="html.settingMenu.language">Language</span> <span
+                            class="settings-options" type="options" name="language"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="EN" class="active">English</b> <b
+                                value="JA">Japanese</b> <b value="ZH">Chinese</b> <b value="KO">Korean</b> <b
+                                value="ES">Spanish</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.eatAnimation">Smooth Animation</span>
+                        <span class="settings-options" type="options" name="eatAnimation"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.CellAnimation">Animation delay</span>
+                        <span class="settings-options" type="range" name="CellAnimation"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="120" step="10" min="10" max="500"
+                                class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right"
+                                aria-hidden="true"></i> <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.zoomSpeed">Zoom speed</span> <span
+                            class="settings-options" type="range" name="zoomSpeed"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="92" step="2" min="70" max="96" class="outer"><span
+                                    class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.cameraSpeed">Camera speed</span> <span
+                            class="settings-options" type="range" name="cameraSpeed"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="2" step="1" min="1" max="20" class="outer"><span
+                                    class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.autoZoom">Auto zoom</span> <span
+                            class="settings-options" type="options" name="autoZoom"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.autoSwitch">Auto-switch Cells</span>
+                        <span class="settings-options" type="options" name="autoSwitch"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.hideHud">Hide HUD</span> <span
+                            class="settings-options" type="options" name="hideHud"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.autoHideText">Auto hide text</span>
+                        <span class="settings-options" type="options" name="autoHideText"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.teamTags">Team Tags</span> <span
+                            class="settings-options" type="options" name="teamTags"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.lbColors">Leaderboard colors</span>
+                        <span class="settings-options" type="options" name="lbColors"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.hideOwnNick">Hide own nick</span> <span
+                            class="settings-options" type="options" name="hideOwnNick"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.hideOwnMass">Hide own mass</span> <span
+                            class="settings-options" type="options" name="hideOwnMass"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.cellNick">Cell Nick</span> <span
+                            class="settings-options" type="options" name="cellNick"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.nickShadow">Nick shadow</span> <span
+                            class="settings-options" type="options" name="nickShadow"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="performance"
+                                hstr="html.settingMenu.opt_perf">Performance</b> <b value="normal"
+                                hstr="html.settingMenu.opt_normal">Normal</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.cellMass">Cell Mass</span> <span
+                            class="settings-options" type="options" name="cellMass"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="shortened" class="active" hstr="html.settingMenu.opt_shortened">Shortened</b> <b
+                                value="full" hstr="html.settingMenu.opt_full">Full</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.massShadow">Mass shadow</span> <span
+                            class="settings-options" type="options" name="massShadow"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="performance"
+                                hstr="html.settingMenu.opt_perf">Performance</b> <b value="normal"
+                                hstr="html.settingMenu.opt_normal">Normal</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.urlSkins">Skins</span> <span
+                            class="settings-options" type="options" name="urlSkins"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.ownSkin">Own Skin</span> <span
+                            class="settings-options" type="options" name="ownSkin"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.backgroundImage">Background Image</span>
+                        <span class="settings-options" type="options" name="backgroundImage"><i
+                                class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.vanillaGrid">Vanilla grid</span> <span
+                            class="settings-options" type="options" name="vanillaGrid"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.bgSectors">Background sectors</span>
+                        <span class="settings-options" type="options" name="bgSectors"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="onlyLines" hstr="html.settingMenu.opt_onlyLines">Only lines</b> <b
+                                value="snowflakes" class="active" hstr="html.settingMenu.opt_snowflakes">Snowflakes</b>
+                            <b value="normal" hstr="html.settingMenu.opt_normal">Normal</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.food">Food</span> <span
+                            class="settings-options" type="options" name="food"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="monoColored" hstr="html.settingMenu.opt_singleClr">Mono colored</b> <b
+                                value="rainbow" class="active" hstr="html.settingMenu.opt_rainbow">rainbow</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.teamIndicator">Active cell
+                            indicator</span> <span class="settings-options" type="options" name="teamIndicator"><i
+                                class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.activeTurnMarker">Active cell
+                            border</span> <span class="settings-options" type="options" name="activeTurnMarker"><i
+                                class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.cursorLine">Cursor lines</span> <span
+                            class="settings-options" type="options" name="cursorLine"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.opponentRings">Opponent rings</span>
+                        <span class="settings-options" type="options" name="opponentRings"><i
+                                class="fas fa-chevron-left" aria-hidden="true"></i> <b value="off"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on" class="active"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.splitRings">Split rings</span> <span
+                            class="settings-options" type="options" name="splitRings"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.virusRange">Viruses range</span> <span
+                            class="settings-options" type="options" name="virusRange"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.commander">Commander</span> <span
+                            class="settings-options" type="options" name="commander"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" hstr="html.settingMenu.opt_off">Off</b> <b
+                                value="on" class="active" hstr="html.settingMenu.opt_on">On</b> <i
+                                class="fas fa-chevron-right" aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title">Chat</span> <span class="settings-options" type="options"
+                            name="chat"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b value="on"
+                                class="active">On</b> <b value="off">Off</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.targeting">Cell Targeting</span> <span
+                            class="settings-options" type="options" name="targeting"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.settingMenu.sounds">Sounds</span> <span
+                            class="settings-options" type="options" name="sounds"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="off" class="active"
+                                hstr="html.settingMenu.opt_off">Off</b> <b value="on"
+                                hstr="html.settingMenu.opt_on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                </div>
+            </div>
+            <div id="instant-replay-panel" class="menu-panel">
+                <div class="irp-close"><i class="fas fa-times" aria-hidden="true"></i></div>
+                <div class="irp-title"><i class="fal fa-film"></i> Instant Replay</div>
+                <div class="instant-replay-container">
+                    <div class="row"><span class="title">Enabled</span> <span class="settings-options" type="options"
+                            name="instantReplay"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b
+                                value="off">Off</b> <b value="on" class="active">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title">Buffer Duration (sec)</span> <span class="settings-options"
+                            type="range" name="replayDuration"><i class="fas fa-chevron-left" aria-hidden="true"></i>
+                            <span value="30" step="5" min="5" max="300" class="outer"><span class="inner"></span>
+                            </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span
+                                class="range-value">[0]</span></span></div>
+                    <div class="irp-hint">Always recording the last <span id="irp-duration-display">30</span>s of
+                        gameplay.<br>Press <b id="irp-save-key">P</b> to save a clip. Use <b>Load Replay</b> in the menu
+                        to watch it.</div>
+                </div>
+            </div>
+            <div id="inputs" class="menu-panel">
+                <div class="inputs-tab-bar"><span class="inputs-tab active" target="#hotkeys"><span
+                            hstr="html.hkMenu.title">Hotkeys</span> </span><span class="inputs-tab"
+                        target="#commands"><i class="fas fa-comments"></i> <span
+                            hstr="html.commandsMenu.title">Commands</span> </span><span class="inputs-tab close"
+                        target="#close"><i class="fas fa-times" aria-hidden="true"></i></span></div>
+                <div class="inputs-menu-container">
+                    <div id="hotkeys" class="inputs-menu active">
+                        <div class="row"><span class="title" hstr="html.mouseMenu.lmb">Left click</span> <span
+                                class="mouse-options" type="options" name="leftClick"><i class="fas fa-chevron-left"
+                                    aria-hidden="true"></i> <b value="off" class="active"
+                                    hstr="html.mouseMenu.off">Off</b> <b value="feed"
+                                    hstr="html.mouseMenu.feed">Feed</b> <b value="macroFeed"
+                                    hstr="html.mouseMenu.macroFeed">Macro feed</b> <b value="split"
+                                    hstr="html.mouseMenu.split">Split</b> <b value="doubleSplit"
+                                    hstr="html.mouseMenu.doubleSplit">Double split</b> <b value="tripleSplit"
+                                    hstr="html.mouseMenu.tripleSplit">Triple split</b> <b value="split16"
+                                    hstr="html.mouseMenu.split16">Split 16</b> <b value="split64"
+                                    hstr="html.mouseMenu.split64">Split 64</b> <b value="commander"
+                                    hstr="html.mouseMenu.commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b
+                                    value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right"
+                                    aria-hidden="true"></i></span></div>
+                        <div class="row"><span class="title" hstr="html.mouseMenu.scroll">Middle click</span> <span
+                                class="mouse-options" type="options" name="middleClick"><i class="fas fa-chevron-left"
+                                    aria-hidden="true"></i> <b value="off" class="active"
+                                    hstr="html.mouseMenu.off">Off</b> <b value="feed"
+                                    hstr="html.mouseMenu.feed">Feed</b> <b value="macroFeed"
+                                    hstr="html.mouseMenu.macroFeed">Macro feed</b> <b value="split"
+                                    hstr="html.mouseMenu.split">Split</b> <b value="doubleSplit"
+                                    hstr="html.mouseMenu.doubleSplit">Double split</b> <b value="tripleSplit"
+                                    hstr="html.mouseMenu.tripleSplit">Triple split</b> <b value="split16"
+                                    hstr="html.mouseMenu.split16">Split 16</b> <b value="split64"
+                                    hstr="html.mouseMenu.split64">Split 64</b> <b value="commander"
+                                    hstr="html.mouseMenu.commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b
+                                    value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right"
+                                    aria-hidden="true"></i></span></div>
+                        <div class="row"><span class="title" hstr="html.mouseMenu.rmb">Right click</span> <span
+                                class="mouse-options" type="options" name="rightClick"><i class="fas fa-chevron-left"
+                                    aria-hidden="true"></i> <b value="off" class="active"
+                                    hstr="html.mouseMenu.off">Off</b> <b value="feed"
+                                    hstr="html.mouseMenu.feed">Feed</b> <b value="macroFeed"
+                                    hstr="html.mouseMenu.macroFeed">Macro feed</b> <b value="split"
+                                    hstr="html.mouseMenu.split">Split</b> <b value="doubleSplit"
+                                    hstr="html.mouseMenu.doubleSplit">Double split</b> <b value="tripleSplit"
+                                    hstr="html.mouseMenu.tripleSplit">Triple split</b> <b value="split16"
+                                    hstr="html.mouseMenu.split16">Split 16</b> <b value="split64"
+                                    hstr="html.mouseMenu.split64">Split 64</b> <b value="commander"
+                                    hstr="html.mouseMenu.commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b
+                                    value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right"
+                                    aria-hidden="true"></i></span></div>
+                        <div class="row"><span class="title">Back button</span> <span class="mouse-options"
+                                type="options" name="backButton"><i class="fas fa-chevron-left" aria-hidden="true"></i>
+                                <b value="off" class="active">Off</b> <b value="feed">Feed</b> <b
+                                    value="macroFeed">Macro feed</b> <b value="split">Split</b> <b
+                                    value="doubleSplit">Double split</b> <b value="tripleSplit">Triple split</b> <b
+                                    value="split16">Split 16</b> <b value="split64">Split 64</b> <b
+                                    value="commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b
+                                    value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right"
+                                    aria-hidden="true"></i></span></div>
+                        <div class="row"><span class="title">Forward button</span> <span class="mouse-options"
+                                type="options" name="forwardButton"><i class="fas fa-chevron-left"
+                                    aria-hidden="true"></i> <b value="off" class="active">Off</b> <b
+                                    value="feed">Feed</b> <b value="macroFeed">Macro feed</b> <b value="split">Split</b>
+                                <b value="doubleSplit">Double split</b> <b value="tripleSplit">Triple split</b> <b
+                                    value="split16">Split 16</b> <b value="split64">Split 64</b> <b
+                                    value="commander">Commander</b> <b value="tabSwitch">Tab Switch</b> <b
+                                    value="stopMovement">Stop Movement</b> <i class="fas fa-chevron-right"
+                                    aria-hidden="true"></i></span></div>
+                        <div class="row" name="toggleMenuKey"><span class="title" hstr="html.hkMenu.toggleMenuKey">Show
+                                / hide menu</span> <input class="key" value="ESC"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleHud"><span class="title" hstr="html.hkMenu.toggleHud">Toggle
+                                HUD</span> <input class="key" value="L"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="multiboxTab"><span class="title" hstr="html.hkMenu.multiboxTab">Multibox
+                                switch</span> <input class="key" value="TAB"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="feedKey"><span class="title" hstr="html.hkMenu.feedKey">Feed</span>
+                            <input class="key" value="W"><span class="key-clear" title="Remove hotkey">&times;</span>
+                        </div>
+                        <div class="row" name="macroFeedKey"><span class="title" hstr="html.hkMenu.macroFeedKey">Macro
+                                feed</span> <input class="key" value="Q"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="splitKey"><span class="title" hstr="html.hkMenu.splitKey">Split</span>
+                            <input class="key" value="SPACE"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="doubleSplitKey"><span class="title"
+                                hstr="html.hkMenu.doubleSplitKey">Double split</span> <input class="key" value="E"><span
+                                class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="tripleSplitKey"><span class="title"
+                                hstr="html.hkMenu.tripleSplitKey">Triple split</span> <input class="key" value="H"><span
+                                class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="split16Key"><span class="title" hstr="html.hkMenu.split16Key">Split
+                                16</span> <input class="key" value="R"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="split64Key"><span class="title" hstr="html.hkMenu.split64Key">Split
+                                64</span> <input class="key" value="T"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="record"><span class="title">Save instant replay</span> <input class="key"
+                                value="P"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="stopKey"><span class="title" hstr="html.hkMenu.stopKey">Cell pause</span>
+                            <input class="key" value="S"><span class="key-clear" title="Remove hotkey">&times;</span>
+                        </div>
+                        <div class="row" name="chatKey"><span class="title" hstr="html.hkMenu.chatKey">Chat key</span>
+                            <input class="key" value="Enter"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleChatScope"><span class="title">Toggle chat scope</span> <input
+                                class="key" value="CAPSLOCK"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="freeSpectateKey"><span class="title"
+                                hstr="html.hkMenu.freeSpectateKey">Toggle spectate mode</span> <input class="key"
+                                value="Y"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleSplitRings"><span class="title"
+                                hstr="html.hkMenu.toggleSplitRings">Toggle split rings</span> <input class="key"
+                                value="N"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleOpponentRings"><span class="title"
+                                hstr="html.hkMenu.toggleOpponentRings">Toggle opponent rings</span> <input class="key"
+                                value="N"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleTeamTags"><span class="title"
+                                hstr="html.hkMenu.toggleTeamTags">Toggle Team Tags</span> <input class="key"
+                                value="Y"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleLbColors"><span class="title"
+                                hstr="html.hkMenu.toggleLbColors">Toggle LB Colors</span> <input class="key"
+                                value="C"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleNick"><span class="title" hstr="html.hkMenu.toggleNick">Toggle Cell
+                                nick</span> <input class="key" value="N"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleMass"><span class="title" hstr="html.hkMenu.toggleMass">Toggle cell
+                                mass</span> <input class="key" value="M"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleOwnNick"><span class="title"
+                                hstr="html.hkMenu.toggleOwnNick">Toggle own nick</span> <input class="key"
+                                value="Z"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleOwnMass"><span class="title"
+                                hstr="html.hkMenu.toggleOwnMass">Toggle own mass</span> <input class="key"
+                                value="X"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleSkin"><span class="title" hstr="html.hkMenu.toggleSkin">Toggle
+                                Skin</span> <input class="key" value="A"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleOwnSkin"><span class="title"
+                                hstr="html.hkMenu.toggleOwnSkin">Toggle Own Skin</span> <input class="key"
+                                value="V"><span class="key-clear" title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="toggleFood"><span class="title" hstr="html.hkMenu.toggleFood">Toggle
+                                food</span> <input class="key" value="F"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command0Key"><span class="title" hstr="html.hkMenu.command0Key">Command
+                                0</span> <input class="key" value="0"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command1Key"><span class="title" hstr="html.hkMenu.command1Key">Command
+                                1</span> <input class="key" value="1"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command2Key"><span class="title" hstr="html.hkMenu.command2Key">Command
+                                2</span> <input class="key" value="2"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command3Key"><span class="title" hstr="html.hkMenu.command3Key">Command
+                                3</span> <input class="key" value="3"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command4Key"><span class="title" hstr="html.hkMenu.command4Key">Command
+                                4</span> <input class="key" value="4"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command5Key"><span class="title" hstr="html.hkMenu.command5Key">Command
+                                5</span> <input class="key" value="5"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command6Key"><span class="title" hstr="html.hkMenu.command6Key">Command
+                                6</span> <input class="key" value="6"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command7Key"><span class="title" hstr="html.hkMenu.command7Key">Command
+                                7</span> <input class="key" value="7"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command8Key"><span class="title" hstr="html.hkMenu.command8Key">Command
+                                8</span> <input class="key" value="8"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="command9Key"><span class="title" hstr="html.hkMenu.command9Key">Command
+                                9</span> <input class="key" value="9"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="zoom1key"><span class="title" hstr="html.hkMenu.zoom1key">Zoom level
+                                1</span> <input class="key" value="ALT+1"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="zoom2key"><span class="title" hstr="html.hkMenu.zoom2key">Zoom level
+                                2</span> <input class="key" value="ALT+2"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="zoom3key"><span class="title" hstr="html.hkMenu.zoom3key">Zoom level
+                                3</span> <input class="key" value="ALT+3"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="zoom4key"><span class="title" hstr="html.hkMenu.zoom4key">Zoom level
+                                4</span> <input class="key" value="ALT+4"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                        <div class="row" name="zoom5key"><span class="title" hstr="html.hkMenu.zoom5key">Zoom level
+                                5</span> <input class="key" value="ALT+5"><span class="key-clear"
+                                title="Remove hotkey">&times;</span></div>
+                    </div>
+                    <div id="commands" class="inputs-menu">
+                        <div class="row"><span class="command-input-box"><i>0</i> <input placeholder="Command 0"
+                                    id="command0"></span></div>
+                        <div class="row"><span class="command-input-box"><i>1</i> <input placeholder="Command 1"
+                                    id="command1"></span></div>
+                        <div class="row"><span class="command-input-box"><i>2</i> <input placeholder="Command 2"
+                                    id="command2"></span></div>
+                        <div class="row"><span class="command-input-box"><i>3</i> <input placeholder="Command 3"
+                                    id="command3"></span></div>
+                        <div class="row"><span class="command-input-box"><i>4</i> <input placeholder="Command 4"
+                                    id="command4"></span></div>
+                        <div class="row"><span class="command-input-box"><i>5</i> <input placeholder="Command 5"
+                                    id="command5"></span></div>
+                        <div class="row"><span class="command-input-box"><i>6</i> <input placeholder="Command 6"
+                                    id="command6"></span></div>
+                        <div class="row"><span class="command-input-box"><i>7</i> <input placeholder="Command 7"
+                                    id="command7"></span></div>
+                        <div class="row"><span class="command-input-box"><i>8</i> <input placeholder="Command 8"
+                                    id="command8"></span></div>
+                        <div class="row"><span class="command-input-box"><i>9</i> <input placeholder="Command 9"
+                                    id="command9"></span></div>
+                    </div>
+                </div>
+            </div>
+            <div id="theme" class="menu-panel">
+                <div class="theme-close"><i class="fas fa-times" aria-hidden="true"></i></div>
+                <div class="theme-container">
+                    <div class="row"><span class="title" hstr="html.themeMenu.selectedPreset">Theme preset</span> <span
+                            class="theme-options" type="options" name="selectedPreset"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="Astrio">Astrio</b> <b value="HSLO v2">HSLO v2</b> <b
+                                value="HSLO v3">HSLO v3</b> <b value="HSLO v4">HSLO v4</b> <b
+                                value="Pastels">Pastels</b> <b value="Agarplus v2">Agarplus v2</b> <b
+                                value="Ogario v4">Ogario v4</b> <b value="HKG">HKG</b> <b value="Yin">Yin</b> <b
+                                value="VNDOT">VNDOT</b> <b value="OZYDOT">OZYDOT</b> <b value="custom"
+                                class="active">Custom</b> <i class="fas fa-chevron-right" aria-hidden="true"></i></span>
+                    </div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.backgroundURL">Background URL</span> <span
+                            class="theme-options" type="input" name="backgroundURL"><input class="input"
+                                id="backgroundURL"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.cursor">Cursor</span> <span
+                            class="theme-options" type="range" name="cursor"><img src="https://www.astrio.io/play.html"
+                                id="cursorDisplay">
+                            <div id="cursorOff"></div><i class="fas fa-chevron-left" aria-hidden="true"></i> <span
+                                value="13" step="1" min="1" max="15" class="outer"><span class="inner"></span> </span><i
+                                class="fas fa-chevron-right" aria-hidden="true"></i> <span
+                                class="range-value">[0]</span>
+                        </span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.chatFontSize">Chat font size</span> <span
+                            class="theme-options" type="range" name="chatFontSize"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="14" step="1" min="10" max="24" class="outer"><span
+                                    class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.lbSize">Leaderboard size</span> <span
+                            class="theme-options" type="range" name="lbSize"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="100" step="5" min="70" max="200"
+                                class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right"
+                                aria-hidden="true"></i> <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.minimapSize">Minimap size</span> <span
+                            class="theme-options" type="range" name="minimapSize"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="200" step="5" min="100" max="250"
+                                class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right"
+                                aria-hidden="true"></i> <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.skinBorder">Skin border</span> <span
+                            class="theme-options" type="range" name="skinBorder"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="90" step="5" min="70" max="100" class="outer"><span
+                                    class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.cellTransparency">Cell transparency</span>
+                        <span class="theme-options" type="range" name="cellTransparency"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="100" step="5" min="40" max="100"
+                                class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right"
+                                aria-hidden="true"></i> <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.lightenCellColor">Lighten cell
+                            color</span> <span class="theme-options" type="range" name="lightenCellColor"><i
+                                class="fas fa-chevron-left" aria-hidden="true"></i> <span value="100" step="5" min="40"
+                                max="100" class="outer"><span class="inner"></span> </span><i
+                                class="fas fa-chevron-right" aria-hidden="true"></i> <span
+                                class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.borderColor">Border color</span> <span
+                            class="theme-options" type="colorpicker"><input id="borderColor" opacity="0"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.borderWidth">Border width</span> <span
+                            class="theme-options" type="range" name="borderWidth"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="60" step="2" min="2" max="150" class="outer"><span
+                                    class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.gridColor">Grid color</span> <span
+                            class="theme-options" type="colorpicker"><input id="gridColor" opacity="0"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.gridTextColor">Grid text color</span>
+                        <span class="theme-options" type="colorpicker"><input id="gridTextColor" opacity="0"></span>
+                    </div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.gridTextSize">Grid text size</span> <span
+                            class="theme-options" type="range" name="gridTextSize"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="1500" step="100" min="500" max="2000"
+                                class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right"
+                                aria-hidden="true"></i> <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.gridTextFont">Grid text font</span> <span
+                            class="theme-options" type="options" name="gridTextFont"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="Geogrotesque Rg">Geogrotesque</b> <b
+                                value="Titillium Web">Titillium Web</b> <b value="Rubik">Rubik</b> <b
+                                value="ubuntu">Ubuntu</b> <b value="raleway">Raleway</b> <b value="cursive">Cursive</b>
+                            <b value="monospace">Monospace</b> <b value="serif">Serif</b> <b value="sans-serif">Sans
+                                serif</b> <b value="oswald" class="active">Oswald</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.gridWidth">Grid width</span> <span
+                            class="theme-options" type="range" name="gridWidth"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="10" step="2" min="2" max="150" class="outer"><span
+                                    class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.nickColor">Nick color</span> <span
+                            class="theme-options" type="colorpicker"><input id="nickColor" opacity="0"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.nickStrokeColor">Nick stroke color</span>
+                        <span class="theme-options" type="colorpicker"><input id="nickStrokeColor" opacity="0"></span>
+                    </div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.cellNickSize">Nick size</span> <span
+                            class="theme-options" type="range" name="cellNickSize"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="100" step="5" min="50" max="200"
+                                class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right"
+                                aria-hidden="true"></i> <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.nickFont">Nick font</span> <span
+                            class="theme-options" type="options" name="nickFont"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="Geogrotesque Rg">Geogrotesque</b> <b
+                                value="Titillium Web">Titillium Web</b> <b value="Rubik">Rubik</b> <b
+                                value="ubuntu">Ubuntu</b> <b value="raleway">Raleway</b> <b value="cursive">Cursive</b>
+                            <b value="monospace">Monospace</b> <b value="serif">Serif</b> <b value="sans-serif">Sans
+                                serif</b> <b value="oswald" class="active">Oswald</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.massFont">Mass font</span> <span
+                            class="theme-options" type="options" name="massFont"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <b value="Geogrotesque Rg">Geogrotesque</b> <b
+                                value="Titillium Web">Titillium Web</b> <b value="Rubik">Rubik</b> <b
+                                value="ubuntu">Ubuntu</b> <b value="raleway">Raleway</b> <b value="cursive">Cursive</b>
+                            <b value="monospace">Monospace</b> <b value="serif">Serif</b> <b value="sans-serif">Sans
+                                serif</b> <b value="oswald" class="active">Oswald</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.massColor">Mass color</span> <span
+                            class="theme-options" type="colorpicker"><input id="massColor" opacity="0"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.massStrokeColor">Mass stroke color</span>
+                        <span class="theme-options" type="colorpicker"><input id="massStrokeColor" opacity="0"></span>
+                    </div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.cellMassSize">Mass size</span> <span
+                            class="theme-options" type="range" name="cellMassSize"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="100" step="5" min="50" max="200"
+                                class="outer"><span class="inner"></span> </span><i class="fas fa-chevron-right"
+                                aria-hidden="true"></i> <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.foodColor">Food color</span> <span
+                            class="theme-options" type="colorpicker"><input id="foodColor" opacity="0"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.foodSize">Food size</span> <span
+                            class="theme-options" type="range" name="foodSize"><i class="fas fa-chevron-left"
+                                aria-hidden="true"></i> <span value="4" step="1" min="1" max="10" class="outer"><span
+                                    class="inner"></span> </span><i class="fas fa-chevron-right" aria-hidden="true"></i>
+                            <span class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.virusColor">Virus color</span> <span
+                            class="theme-options" type="colorpicker"><input id="virusColor" opacity="0"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.virusBorderColor">Virus border
+                            color</span> <span class="theme-options" type="colorpicker"><input id="virusBorderColor"
+                                opacity="0"></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.virusBorderWidth">virus border
+                            width</span> <span class="theme-options" type="range" name="virusBorderWidth"><i
+                                class="fas fa-chevron-left" aria-hidden="true"></i> <span value="10" step="1" min="1"
+                                max="25" class="outer"><span class="inner"></span> </span><i
+                                class="fas fa-chevron-right" aria-hidden="true"></i> <span
+                                class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.backgroundColor">Background color</span>
+                        <span class="theme-options" type="colorpicker"><input id="backgroundColor" opacity="0"></span>
+                    </div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.commanderColor">Commander color</span>
+                        <span class="theme-options" type="colorpicker"><input id="commanderColor" opacity="0"></span>
+                    </div>
+                    <div class="row"><span class="title" hstr="html.themeMenu.indicatorSize">Active cell indicator
+                            size</span> <span class="theme-options" type="range" name="indicatorSize"><i
+                                class="fas fa-chevron-left" aria-hidden="true"></i> <span value="70" step="5" min="50"
+                                max="150" class="outer"><span class="inner"></span> </span><i
+                                class="fas fa-chevron-right" aria-hidden="true"></i> <span
+                                class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title">Active cell indicator color</span> <span class="theme-options"
+                            type="colorpicker"><input id="indicatorColor" opacity="0"></span></div>
+                    <div class="row"><span class="title">Cell border size</span> <span class="theme-options"
+                            type="range" name="cellBorderSize"><i class="fas fa-chevron-left" aria-hidden="true"></i>
+                            <span value="1" step="1" min="1" max="10" class="outer"><span class="inner"></span>
+                            </span><i class="fas fa-chevron-right" aria-hidden="true"></i> <span
+                                class="range-value">[0]</span></span></div>
+                    <div class="row"><span class="title">Active cell border</span> <span class="theme-options"
+                            type="colorpicker"><input id="multiboxActive" opacity="0"></span></div>
+                    <div class="row"><span class="title">Inactive cell border</span> <span class="theme-options"
+                            type="colorpicker"><input id="multiboxInactive" opacity="0"></span></div>
+                </div>
+            </div>
+            <div id="import-export" class="menu-panel">
+                <div class="import-export-close"><i class="fas fa-times" aria-hidden="true"></i></div>
+                <div class="import-export-container">
+                    <div class="row"><span class="title">Profiles</span> <span class="import-export-options"
+                            type="options" name="profiles"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b
+                                value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title">Settings</span> <span class="import-export-options"
+                            type="options" name="settings"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b
+                                value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title">Hotkeys</span> <span class="import-export-options"
+                            type="options" name="hotkeys"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b
+                                value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title">Commands</span> <span class="import-export-options"
+                            type="options" name="commands"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b
+                                value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><span class="title">Theming</span> <span class="import-export-options"
+                            type="options" name="theming"><i class="fas fa-chevron-left" aria-hidden="true"></i> <b
+                                value="off" class="active">Off</b> <b value="on">On</b> <i class="fas fa-chevron-right"
+                                aria-hidden="true"></i></span></div>
+                    <div class="row"><input type="file"> <a id="import"
+                            class="button is-link button-import-export"><span class="icon"><i
+                                    class="fas fa-upload"></i></span><span>import</span> </a><a id="export"
+                            target="_blank" class="button is-link button-import-export"><span class="icon"><i
+                                    class="fas fa-download"></i></span><span>export</span> </a><a id="reset"
+                            target="_blank" class="button is-link button-import-export"><span class="icon"><i
+                                    class="fas fa-trash"></i></span><span>reset</span></a></div>
+                </div>
+            </div>
+        </div>
+        <div class="a4g" id="menu-ad"><ins class="adsbygoogle" style="display:inline-block;width:728px;height:90px"
+                data-ad-client="ca-pub-1919530911261008" data-ad-slot=""></ins>
+            <script>(adsbygoogle = window.adsbygoogle || []).push({});</script>
+        </div>
+    </div>
+    <div id="huds">
+        <div id="replay-hud">
+            <div class="replay-timeline-bar"><input type="range" id="replay-timeline" min="0" max="100" value="0"
+                    step="0.1"></div>
+            <div class="controller"><span id="replay-play" class="icon" onclick="Recorder.togglePause()"><i
+                        class="fal fa-play replay-play"></i></span> <span id="replay-pause" class="icon"
+                    onclick="Recorder.togglePause()"><i class="fal fa-pause replay-pause"></i></span> <span
+                    id="replay-speed-down" class="icon"
+                    onclick="Recorder.setSpeed(Math.max(0.25, Recorder.playbackSpeed / 2))"><i
+                        class="fal fa-backward replay-speed-ctrl"></i></span> <span id="replay-speed"
+                    class="speed-label">1x</span> <span id="replay-speed-up" class="icon"
+                    onclick="Recorder.setSpeed(Math.min(4, Recorder.playbackSpeed * 2))"><i
+                        class="fal fa-forward replay-speed-ctrl"></i></span> <span id="replay-restart" class="icon"
+                    onclick="Recorder.restart()"><i class="fal fa-redo-alt replay-restart"></i></span> <span
+                    id="replay-stop" class="icon" onclick="Recorder.stopReplay()"><i
+                        class="fal fa-times replay-stop"></i></span></div>
+            <div id="replay-time" class="replay-time">0:00 / 0:00</div>
+        </div>
+        <div id="record-hud"><span class="icon"><i class="fas fa-circle record-circle"></i></span> <span>REC</span>
+        </div>
+        <div id="leaderboard-hud">
+            <div id="leaderboard-head">ASTR.IO</div>
+            <div id="leaderboard-positions"></div>
+        </div>
+        <div id="team-leaderboard-hud">
+            <div id="timer-hud"></div>
+            <div id="team-leaderboard-head">TEAMS</div>
+            <div id="team-leaderboard-positions"></div>
+            <div id="teamlist-head">ALLIES</div>
+            <div id="teamlist-positions"></div>
+            <div id="team-lb-stats"></div>
+        </div>
+        <div id="message-hud">
+            <div id="emojiContainer"></div>
+            <div id="chat-input-row"><span id="chat-scope" class="chat-scope-party">Party</span> <input id="message"
+                    hstr="placeholder.huds.enterChatMsg"></div>
+        </div>
+        <div id="chatroom"></div>
+        <div id="stats-hud"><i class="fas fa-lock" aria-hidden="true"></i></div>
+        <div id="challenge-overlay">
+            <div id="challenge-box">
+                <div id="challenge-title">Are you human?</div>
+                <div id="challenge-desc">Your connection looks suspicious. Complete the captcha to continue:</div>
+                <div id="h-captcha-widget"></div>
+                <div id="h-captcha-status" style="color:#8590a6;font-size:13px;margin-top:10px;"></div>
+            </div>
+        </div>
+        <div id="targeting-hud">
+            <div>
+                <div class="spectate-mode-btn active" id="spectate-mode-top"><i class="fal fa-video"></i></div>
+                <div class="spectate-mode-btn" id="spectate-mode-mouse"><i class="fal fa-mouse-pointer"></i></div>
+                <div class="spectate-mode-btn" id="spectate-mode-target"><i class="fal fa-expand"></i></div>
+                <div class="spectate-mode-btn" id="spectate-zoom-in"><i class="fal fa-search-plus"></i></div>
+                <div class="spectate-mode-btn" id="spectate-zoom-out"><i class="fal fa-search-minus"></i></div>
+                <div class="spectate-mode-btn" id="spectate-center"><i class="fal fa-crosshairs"></i></div>
+            </div>
+            <div id="targeting-no-1" class="static"><span hstr="html.huds.targeting_bigCellVp">FOLLOWING #1
+                    PLAYER</span></div>
+            <div id="targeting-mouse" class="static"><span hstr="html.huds.targeting_followVp">FREE ROAM</span></div>
+            <div id="targeting-players">
+                <div class="static"><span hstr="html.huds.targeting_players">FOLLOWING PLAYERS</span></div>
+                <div id="targeting-player1"><span class="nick">Target 1</span> [ <span class="mass">NOT SELECTED</span>]
+                </div>
+                <div id="targeting-player2"><span class="nick">Target 2</span> [ <span class="mass">NOT SELECTED</span>]
+                </div>
+                <div id="targeting-playersMass"><span hstr="html.huds.targeting_totalMass">TOTAL MASS</span> [ <span
+                        class="mass">0</span>]</div>
+            </div>
+        </div>
+        <div id="spectator-ad" style="display:none"><ins class="adsbygoogle"
+                style="display:inline-block;width:728px;height:90px" data-ad-client="ca-pub-1919530911261008"
+                data-ad-slot=""></ins></div>
+        <div id="time"><a href="https://time.is" id="time_is_link"></a></div>
+        <div id="minimap-hud">
+            <div class="minimap-grid">
+                <div class="minimap-row">
+                    <div class="minimap-sector">A1</div>
+                    <div class="minimap-sector">A2</div>
+                    <div class="minimap-sector">A3</div>
+                    <div class="minimap-sector">A4</div>
+                    <div class="minimap-sector">A5</div>
+                </div>
+                <div class="minimap-row">
+                    <div class="minimap-sector">B1</div>
+                    <div class="minimap-sector">B2</div>
+                    <div class="minimap-sector">B3</div>
+                    <div class="minimap-sector">B4</div>
+                    <div class="minimap-sector">B5</div>
+                </div>
+                <div class="minimap-row">
+                    <div class="minimap-sector">C1</div>
+                    <div class="minimap-sector">C2</div>
+                    <div class="minimap-sector">C3</div>
+                    <div class="minimap-sector">C4</div>
+                    <div class="minimap-sector">C5</div>
+                </div>
+                <div class="minimap-row">
+                    <div class="minimap-sector">D1</div>
+                    <div class="minimap-sector">D2</div>
+                    <div class="minimap-sector">D3</div>
+                    <div class="minimap-sector">D4</div>
+                    <div class="minimap-sector">D5</div>
+                </div>
+                <div class="minimap-row">
+                    <div class="minimap-sector">E1</div>
+                    <div class="minimap-sector">E2</div>
+                    <div class="minimap-sector">E3</div>
+                    <div class="minimap-sector">E4</div>
+                    <div class="minimap-sector">E5</div>
+                </div>
+            </div><canvas id="minimap-nodes"></canvas>
+        </div>
+        <div id="notifications"></div>
+    </div><canvas id="canvas"></canvas>
+    <div id="version-sync-overlay" style="display:none">
+        <div id="version-sync-box">
+            <div id="version-sync-icon">⟳</div>
+            <h2 id="version-sync-title">Update Available</h2>
+            <p id="version-sync-msg">The server has been updated. Please refresh to get the latest version and continue
+                playing.</p><button id="version-sync-btn" onclick="window.location.reload()">Refresh Now</button>
+        </div>
+    </div>
+    <div id="tournament-results-overlay">
+        <div id="tournament-results-box">
+            <div id="tournament-results-header"></div>
+            <div id="tournament-results-podium"></div>
+            <div id="tournament-results-table"></div><button id="tournament-results-close">Close</button>
+        </div>
+    </div>
+    <script src="https://www.astrio.io/js/connection/astrio/Codec.js@v=96353"></script>
+    <script src="https://www.astrio.io/js/bundle.js@v=96353"></script>
+</body>
+
+</html>

@@ -92,6 +92,9 @@ export default class GameConnection {
     this.regionHosts = {
       europe: null,
       america: 'na.astrio.io',
+      // 亚洲服:本地 C# 服(AstrIO.Server,端口表与原版 localPorts 一致)
+      // http 页面下强制 ws://(本地服无 TLS);port 由 _doConnect 的 localPorts 分支处理
+      asia: 'localhost',
     };
     this.privateHost = null;
   }
@@ -154,9 +157,12 @@ export default class GameConnection {
       if (target) {
         this.localhost = false;
         // WebSocket 地址使用原版:原站是 https 页面 + wss 端点;
-        // 本地 http 页面注入 __ASTRIO_LIVE_WS 时也强制 wss(http 下 ws:// 会 301 到 https)
-        const scheme = this.view.__ASTRIO_LIVE_WS ? 'wss' : (this.isSecure ? 'wss' : 'ws');
-        this.ws = new WebSocket(scheme + '://' + target + '/ws/' + serverArg);
+        // 本地 http 页面注入 __ASTRIO_LIVE_WS 时也强制 wss(http 下 ws:// 会 301 到 https)。
+        // 亚洲服(region=asia → localhost)走本地 C# 服,始终 ws://(无 TLS)。
+        const isAsia = this.region === 'asia' && target === 'localhost';
+        const scheme = isAsia ? 'ws' : (this.view.__ASTRIO_LIVE_WS ? 'wss' : (this.isSecure ? 'wss' : 'ws'));
+        const portPart = isAsia && this.localPorts[serverArg] ? ':' + this.localPorts[serverArg] : '';
+        this.ws = new WebSocket(scheme + '://' + target + portPart + (isAsia ? '/' : '/ws/') + serverArg);
       } else if (this.localPorts[serverArg]) {
         this.localhost = true;
         this.ws = new WebSocket('ws://localhost:' + this.localPorts[serverArg]);
