@@ -101,3 +101,5 @@ app.MapGet("/server-info/{mode}", (string mode) =>
     .RequireCors("poll");
 
 app.Run();
+
+app.Run();

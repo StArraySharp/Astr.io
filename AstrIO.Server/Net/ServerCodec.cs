@@ -77,4 +77,15 @@ public sealed class ServerCodec
 
     /// <summary>失步自同步：快进上行流 n 轮。</summary>
     public void FastForwardTx(int rounds) { for (int i = 0; i < rounds; i++) Xorshift128Round(_clientTx!); }
+
+    /// <summary>探针：复制当前上行流状态并推进 n 轮（不消耗真实流）。</summary>
+    public int[] ProbeTxStream(int rounds)
+    {
+        var probe = (int[])_clientTx!.Clone();
+        for (int i = 0; i < rounds; i++) Xorshift128Round(probe);
+        return probe;
+    }
+
+    /// <summary>CodecInPlace 的拷贝版（不修改入参，返回解密结果）。</summary>
+    public byte[] CodecInPlaceCopy(byte[] data, int[] s) => CodecInPlace((byte[])data.Clone(), s);
 }
