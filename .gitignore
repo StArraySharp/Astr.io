@@ -1,0 +1,26 @@
+# --- 依赖 ---
+node_modules/
+
+# --- .NET 构建产物 ---
+bin/
+obj/
+*.user
+
+# --- 运行时产物 ---
+*.log
+logs/
+
+# --- 临时/本地 ---
+tmp/
+*.tmp
+.DS_Store
+Thumbs.db
+
+# --- 编辑器 ---
+.vs/
+.vscode/*
+!.vscode/settings.json
+!.vscode/tasks.json
+
+# --- 服务器运行时数据(如后续加持久化) ---
+AstrIO.Server/data/

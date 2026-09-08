@@ -1,0 +1,302 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Astrio - Brackets</title>
+    <link rel="stylesheet" href="bracket/css/bracket.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+  </head>
+  <body style="visibility: hidden">
+    <!-- ---- Header ---- -->
+    <header class="header">
+      <div class="logo" style="cursor:pointer" id="nav-home">
+        <i class="fas fa-trophy"></i> ASTR.IO
+        <span class="subtitle">Brackets</span>
+      </div>
+      <nav class="header-nav" id="main-nav">
+        <button data-view="official" class="active"><i class="fas fa-crown"></i> Official</button>
+        <button data-view="public"><i class="fas fa-globe"></i> Public</button>
+        <button data-view="mine"><i class="fas fa-user"></i> My Brackets</button>
+      </nav>
+      <div class="header-right">
+        <button class="btn-primary btn-sm" id="btn-create">
+          <i class="fas fa-plus"></i> Create
+        </button>
+        <div class="header-user" id="header-user"></div>
+      </div>
+    </header>
+
+    <!-- ---- Dashboard View ---- -->
+    <div id="view-dashboard" class="container">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:14px">
+        <div id="dashboard-title" style="font-size:16px;font-weight:700">Official Tournaments</div>
+        <div style="display:flex;gap:8px">
+          <input id="search-input" type="text" placeholder="Search..." style="
+            background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+            padding:6px 10px;color:var(--text-0);font-size:12px;outline:none;width:180px;
+          " />
+          <select id="filter-format" style="
+            background:var(--bg-2);border:1px solid var(--border);border-radius:var(--radius-sm);
+            padding:6px 8px;color:var(--text-1);font-size:12px;outline:none;
+          ">
+            <option value="">All Formats</option>
+            <option value="single_elim">Single Elim</option>
+            <option value="double_elim">Double Elim</option>
+            <option value="round_robin">Round Robin</option>
+            <option value="swiss">Swiss</option>
+            <option value="ffa">FFA</option>
+          </select>
+        </div>
+      </div>
+      <div id="bracket-list" class="bracket-grid"></div>
+      <div id="bracket-list-empty" class="empty-state hidden">
+        <i class="fas fa-trophy"></i>
+        <span>No brackets found</span>
+      </div>
+      <div id="bracket-list-loading" class="empty-state hidden">
+        <i class="fas fa-spinner fa-spin"></i>
+        <span>Loading...</span>
+      </div>
+      <div id="pagination" style="display:flex;justify-content:center;gap:8px;margin-top:16px"></div>
+    </div>
+
+    <!-- ---- Create View ---- -->
+    <div id="view-create" class="container hidden">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:16px">
+        <button class="btn-secondary btn-sm" id="create-back"><i class="fas fa-arrow-left"></i></button>
+        <span style="font-size:16px;font-weight:700">Create Bracket</span>
+      </div>
+      <div class="panel">
+        <div class="panel-body">
+          <!-- Format selection -->
+          <div style="margin-bottom:16px">
+            <div class="section-label" style="margin-bottom:8px">Format</div>
+            <div class="format-cards" id="format-cards">
+              <div class="format-card selected" data-format="single_elim">
+                <i class="fas fa-sitemap"></i>
+                <div class="format-name">Single Elim</div>
+                <div class="format-desc">Lose once, you're out</div>
+              </div>
+              <div class="format-card" data-format="double_elim">
+                <i class="fas fa-layer-group"></i>
+                <div class="format-name">Double Elim</div>
+                <div class="format-desc">Two chances to lose</div>
+              </div>
+              <div class="format-card" data-format="round_robin">
+                <i class="fas fa-arrows-rotate"></i>
+                <div class="format-name">Round Robin</div>
+                <div class="format-desc">Everyone plays everyone</div>
+              </div>
+              <div class="format-card" data-format="swiss">
+                <i class="fas fa-chess"></i>
+                <div class="format-name">Swiss</div>
+                <div class="format-desc">Score-based pairing</div>
+              </div>
+              <div class="format-card" data-format="ffa">
+                <i class="fas fa-ranking-star"></i>
+                <div class="format-name">FFA</div>
+                <div class="format-desc">Leaderboard / points</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full">
+              <label>Tournament Name</label>
+              <input id="create-name" type="text" placeholder="e.g. Astrio Weekly #12" maxlength="100" />
+            </div>
+            <div class="form-group full">
+              <label>Description</label>
+              <textarea id="create-desc" placeholder="Rules, prizes, info..." maxlength="500"></textarea>
+            </div>
+            <div class="form-group">
+              <label>Game Mode</label>
+              <select id="create-game-mode">
+                <option value="">Any</option>
+                <option value="ffa">FFA</option>
+                <option value="domination">Domination</option>
+                <option value="megasplit">Megasplit</option>
+                <option value="novirus">No Virus</option>
+                <option value="instamerge">Instamerge</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Max Participants</label>
+              <input id="create-max" type="number" min="2" max="256" placeholder="No limit" />
+            </div>
+            <div class="form-group">
+              <label>Visibility</label>
+              <select id="create-visibility">
+                <option value="private">Private</option>
+                <option value="public">Public</option>
+                <option value="official" id="opt-official">Official</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label>Best Of</label>
+              <select id="create-best-of">
+                <option value="1">Best of 1</option>
+                <option value="3">Best of 3</option>
+                <option value="5">Best of 5</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Format-specific options -->
+          <div id="create-elim-opts" style="margin-top:14px">
+            <div class="form-group" style="flex-direction:row;align-items:center;gap:8px">
+              <input type="checkbox" id="create-third-place" />
+              <label for="create-third-place" style="font-size:12px;text-transform:none;letter-spacing:normal;color:var(--text-1);cursor:pointer">3rd place match</label>
+            </div>
+          </div>
+          <div id="create-double-opts" class="hidden" style="margin-top:14px">
+            <div class="form-group" style="flex-direction:row;align-items:center;gap:8px">
+              <input type="checkbox" id="create-gf-reset" checked />
+              <label for="create-gf-reset" style="font-size:12px;text-transform:none;letter-spacing:normal;color:var(--text-1);cursor:pointer">Grand Finals reset (if losers bracket winner wins)</label>
+            </div>
+          </div>
+          <div id="create-swiss-opts" class="hidden" style="margin-top:14px">
+            <div class="form-group">
+              <label>Swiss Rounds</label>
+              <input id="create-swiss-rounds" type="number" min="1" max="20" placeholder="Auto (log2 of participants)" />
+            </div>
+          </div>
+
+          <div style="margin-top:18px;display:flex;gap:8px;justify-content:flex-end">
+            <button class="btn-secondary" id="create-cancel">Cancel</button>
+            <button class="btn-primary" id="create-submit"><i class="fas fa-plus"></i> Create Bracket</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Bracket Detail View ---- -->
+    <div id="view-bracket" class="hidden">
+      <!-- Sticky toolbar -->
+      <div class="bracket-toolbar">
+        <div class="bracket-toolbar-left">
+          <button class="icon-btn" id="bracket-back"><i class="fas fa-arrow-left"></i></button>
+          <div class="bracket-toolbar-info">
+            <span id="bracket-title" class="bracket-view-title"></span>
+            <div id="bracket-meta" class="bracket-meta-tags"></div>
+          </div>
+        </div>
+        <div class="bracket-view-actions" id="bracket-actions"></div>
+      </div>
+
+      <div class="bracket-layout">
+        <!-- Sidebar: participants + managers -->
+        <div class="bracket-sidebar" id="bracket-sidebar">
+          <!-- Participants Panel -->
+          <div class="panel">
+            <div class="panel-header">
+              <span><i class="fas fa-users"></i> Participants</span>
+              <span class="count-badge" id="participant-count">0</span>
+            </div>
+            <div class="panel-body" style="padding:0">
+              <ul class="participant-list" id="participant-list"></ul>
+            </div>
+            <div id="add-participant-wrap" class="hidden panel-add-row">
+              <input id="add-p-name" type="text" placeholder="Name" class="add-input" maxlength="30" />
+              <input id="add-p-tag" type="text" placeholder="Tag" class="add-input add-input-sm" maxlength="10" />
+              <button class="btn-primary btn-sm" id="add-p-btn"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+
+          <!-- Managers Panel -->
+          <div class="panel" id="managers-panel">
+            <div class="panel-header">
+              <span><i class="fas fa-shield-halved"></i> Managers</span>
+            </div>
+            <div class="panel-body" style="padding:0">
+              <ul class="participant-list" id="manager-list"></ul>
+            </div>
+            <div id="add-manager-wrap" class="hidden panel-add-row">
+              <input id="add-m-username" type="text" placeholder="Discord username" class="add-input" />
+              <button class="btn-primary btn-sm" id="add-m-btn"><i class="fas fa-plus"></i></button>
+            </div>
+          </div>
+
+          <!-- Standings (for RR/Swiss) -->
+          <div class="panel hidden" id="standings-panel">
+            <div class="panel-header">
+              <span><i class="fas fa-list-ol"></i> Standings</span>
+            </div>
+            <div class="panel-body" style="padding:0">
+              <table class="standings-table" id="standings-table">
+                <thead><tr><th>#</th><th>Name</th><th>W</th><th>L</th><th>TB</th></tr></thead>
+                <tbody id="standings-body"></tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        <!-- Main bracket area -->
+        <div class="bracket-main">
+          <div id="bracket-content" style="height:100%"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Score Report Modal ---- -->
+    <div id="score-modal" class="modal-overlay hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <span>Report Score</span>
+          <button class="close-btn" id="score-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="score-inputs" id="score-inputs"></div>
+          <div id="score-match-id" class="hidden"></div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-danger btn-sm" id="score-reset-btn">Reset Match</button>
+          <button class="btn-secondary btn-sm" id="score-cancel-btn">Cancel</button>
+          <button class="btn-primary btn-sm" id="score-save-btn"><i class="fas fa-check"></i> Save</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- Confirm Modal ---- -->
+    <div id="confirm-modal" class="modal-overlay hidden">
+      <div class="modal" style="max-width:360px">
+        <div class="modal-header">
+          <span id="confirm-title">Confirm</span>
+          <button class="close-btn" id="confirm-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <p id="confirm-text" style="font-size:13px;color:var(--text-1)"></p>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-sm" id="confirm-no">Cancel</button>
+          <button class="btn-danger btn-sm" id="confirm-yes">Confirm</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ---- FFA Score Modal ---- -->
+    <div id="ffa-modal" class="modal-overlay hidden">
+      <div class="modal" style="max-width:320px">
+        <div class="modal-header">
+          <span id="ffa-modal-title">Set Score</span>
+          <button class="close-btn" id="ffa-modal-close">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Points</label>
+            <input id="ffa-score-input" type="number" min="0" max="999999" placeholder="0" style="font-size:20px;font-weight:700;text-align:center" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary btn-sm" id="ffa-modal-cancel">Cancel</button>
+          <button class="btn-primary btn-sm" id="ffa-modal-save"><i class="fas fa-check"></i> Save</button>
+        </div>
+      </div>
+    </div>
+
+    <script src="bracket/js/generator.js"></script>
+    <script src="bracket/js/renderer.js"></script>
+    <script src="bracket/js/app.js"></script>
+  </body>
+</html>

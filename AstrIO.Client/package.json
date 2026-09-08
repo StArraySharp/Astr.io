@@ -1,0 +1,20 @@
+{
+  "name": "astrio-client-rewrite",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Clean-room equivalent implementation of the astrio.io game client (from deobfuscated bundle)",
+  "main": "src/index.js",
+  "scripts": {
+    "check": "node scripts/check.mjs",
+    "wat": "node scripts/wasm2wat.mjs wasm/codec.wasm wat/codec.wat",
+    "start": "node scripts/serve.mjs"
+  },
+  "dependencies": {
+    "jquery": "^3.7.1",
+    "seedrandom": "^3.0.5"
+  },
+  "devDependencies": {
+    "wabt": "^1.0.36"
+  }
+}
