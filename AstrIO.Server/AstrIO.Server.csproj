@@ -9,4 +9,9 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <!-- Web 控制面板:构建时复制到输出目录(panel.html 从 ContentRoot 读取) -->
+  <ItemGroup>
+    <None Update="panel.html" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

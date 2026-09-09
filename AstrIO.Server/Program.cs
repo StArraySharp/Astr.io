@@ -116,7 +116,21 @@ app.Map("/chat", async (HttpContext ctx) =>
 
 app.MapGet("/panel", async (HttpContext ctx) =>
 {
-    var html = await File.ReadAllTextAsync(Path.Combine(app.Environment.ContentRootPath, "panel.html"), ctx.RequestAborted);
+    // panel.html 查找顺序:ContentRoot(开发/dotnet run) → ContentRoot/bin/...(发布部署)
+    var candidates = new[]
+    {
+        Path.Combine(app.Environment.ContentRootPath, "panel.html"),
+        Path.Combine(app.Environment.ContentRootPath, "bin", "Debug", $"net{Environment.Version}", "panel.html"),
+        Path.Combine(AppContext.BaseDirectory, "panel.html"),
+    };
+    var path = candidates.FirstOrDefault(File.Exists);
+    if (path == null)
+    {
+        ctx.Response.StatusCode = 500;
+        await ctx.Response.WriteAsync("panel.html not found (build copies it to output)", ctx.RequestAborted);
+        return;
+    }
+    var html = await File.ReadAllTextAsync(path, ctx.RequestAborted);
     ctx.Response.ContentType = "text/html; charset=utf-8";
     await ctx.Response.WriteAsync(html, ctx.RequestAborted);
 });
