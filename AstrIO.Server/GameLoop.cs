@@ -1,23 +1,26 @@
 using System.Collections.Concurrent;
 using System.Net.WebSockets;
-using System.Text;
-using System.Text.Json;
 using AstrIO.Server.Game;
 using AstrIO.Server.Net;
 
 namespace AstrIO.Server;
 
-/// <summary>世界主循环 + WebSocket 接入 + 二进制世界帧编码。</summary>
+/// <summary>
+/// 世界主循环 + 会话注册 + 二进制帧编码。逐项对齐 Node mock-server 主循环：
+///   - 每 tick：botThink → world.Step → maintainBots → 每会话推帧
+///   - 三段式帧策略：全量首帧（含 seen 重建）→ 每帧 delta → 死亡 delta+clearCells 后旁观
+///   - 25 帧（≈1s）发一次 90 排行榜 + 130 战队榜
+///   - activeTab 变化时下发 0x78 tabChange（multibox 控制权跟随）
+/// </summary>
 public sealed class GameLoop
 {
-    readonly World _world = new();
+    readonly GameWorld _world = new();
     readonly ILogger<GameLoop> _log;
     readonly ConcurrentDictionary<Session, byte> _sessions = new();
-    CancellationToken _ct;
 
     public GameLoop(ILogger<GameLoop> log) { _log = log; }
 
-    public Session? AddSession(WebSocket ws, string mode)
+    public Session AddSession(WebSocket ws, string mode)
     {
         var s = new Session(ws, _world, _log, mode);
         _sessions[s] = 1;
@@ -27,127 +30,172 @@ public sealed class GameLoop
     public void RemoveSession(Session s)
     {
         _sessions.TryRemove(s, out _);
-        World.Lock();
-        try { _world.RemoveSessionPlayer(s.Player); } finally { World.Unlock(); }
+        WorldLock.Lock();
+        try { _world.RemovePlayer(s.Player); } finally { WorldLock.Unlock(); }
+        _log.LogInformation("[ws] player left: {Nick}", s.Player.Nick);
     }
 
     public async Task RunAsync(CancellationToken ct)
     {
-        _ct = ct;
-        World.Lock();
-        try { _world.SpawnBots(); } finally { World.Unlock(); }
-        _log.LogInformation("[game] {Bots} bots spawned, world border {Max}", World.BotCount, World.BorderMax);
+        WorldLock.Lock();
+        try { _world.SpawnBots(); } finally { WorldLock.Unlock(); }
+        _log.LogInformation("[bots] spawned {N} bots with mass {M} → mode: extreme",
+            _world.BotCount, GameWorld.BotSpawnMass);
 
-        var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(World.TickMs));
+        // 定期重发 222 挑战（客户端 onOpen 后 init,就绪即应答）
+        using var challengeTimer = new PeriodicTimer(TimeSpan.FromSeconds(3));
+        var challengeTask = ChallengeLoop(ct, challengeTimer);
+
+        var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(GameWorld.TickMs));
         int frame = 0;
         while (await timer.WaitForNextTickAsync(ct))
         {
-            World.Lock();
-            List<(Session, byte[])>? frames = null;
+            var sends = new List<(Session, byte[])>();
+            byte[]? lbFrame = null, teamLbFrame = null;
             try
             {
-                foreach (var b in _world.Bots) _world.BotThink(b);
-                _world.Step();
-                _world.MaintainBots();
+                WorldLock.Lock();
+                try
+                {
+                    foreach (var b in _world.Bots) _world.BotThink(b);
+                    _world.Step();
+                    _world.MaintainBots();
 
-                frame++;
-                var lb = frame % 25 == 0;   // 每秒排行榜+战队榜
-                frames = new List<(Session, byte[])>(_sessions.Count);
-                byte[]? lbFrame = lb ? EncodeLeaderboard() : null;
-                byte[]? teamLbFrame = lb ? EncodeTeamLeaderboard() : null;
+                    frame++;
+                    var lb = frame % 25 == 0;
+                    if (lb)
+                    {
+                        lbFrame = EncodeLeaderboard();
+                        teamLbFrame = EncodeTeamLeaderboard();
+                    }
+
+                    foreach (var s in _sessions.Keys)
+                    {
+                        if (!s.Seeded) continue;   // 未完成种子握手不推业务帧
+
+                        // 首帧/重生：全量世界 + seen 重建
+                        if (!s.SentInitial)
+                        {
+                            sends.Add((s, EncodeWorldFull(s)));
+                            s.SentInitial = true;
+                            s.Seen.Clear();
+                            foreach (var c in _world.Cells.Keys) s.Seen.Add(c);
+                            s.DeathSent = false;
+                            continue;
+                        }
+
+                        var alive = s.Player.Cells.Count > 0;
+                        if (!alive)
+                        {
+                            // 死亡帧：最后一个 delta（含吃事件,客户端才能移除残细胞）+ clearCells,
+                            // 之后旁观模式:持续发世界 delta（无 own 细胞）,客户端跟随镜头观战
+                            if (!s.DeathSent)
+                            {
+                                sends.Add((s, EncodeWorldDelta(s)));
+                                sends.Add((s, new byte[] { Op.ClearCells }));
+                                s.DeathSent = true;
+                                _log.LogInformation("[ws] {Nick} died → spectate", s.Player.Nick);
+                            }
+                            sends.Add((s, EncodeWorldDelta(s)));
+                            continue;
+                        }
+
+                        sends.Add((s, EncodeWorldDelta(s)));
+
+                        // multibox：activeTab 变化（含子球被吃自动切回）→ 下发 0x78 模拟 Tab 键
+                        if (s.Player.ActiveTab != s.LastSentTab)
+                        {
+                            s.LastSentTab = s.Player.ActiveTab;
+                            var w = new BinWriter();
+                            w.U8(Op.TabChange);
+                            w.U8(s.Player.ActiveTab);
+                            sends.Add((s, w.ToArray()));
+                        }
+                    }
+                }
+                finally { WorldLock.Unlock(); }
+            }
+            catch (Exception ex)
+            {
+                // ★ 单帧异常只记日志不中断:主循环若被异常终止,客户端会停留在
+                //   "收到初始帧后再无世界帧"的假死状态（静默失败最难排查）
+                _log.LogError(ex, "[game] tick {Frame} failed — world continues", frame);
+                await Task.Delay(GameWorld.TickMs, ct);
+                continue;
+            }
+
+            foreach (var (s, f) in sends)
+                await s.SendBinaryAsync(f, ct);
+            if (lbFrame != null || teamLbFrame != null)
                 foreach (var s in _sessions.Keys)
                 {
-                    if (!s.Seeded) continue; // 未完成种子握手不推业务帧
-
-                    var alive = s.Player.Cells.Count > 0;
-                    if (!alive)
-                    {
-                        // 死亡帧:发最后一个 delta(含吃事件,客户端才能移除残细胞)+ clearCells,
-                        // 之后进入旁观模式:持续发世界 delta(无 own 细胞),客户端跟随镜头观战
-                        if (!s.DeathSent)
-                        {
-                            frames.Add((s, EncodeWorldFrame(s)));
-                            frames.Add((s, new byte[] { Op.ClearCells }));
-                            s.Seen.Clear();
-                            s.DeathSent = true;
-                            s.SentInitial = false; // 重生后重新全量
-                            _log.LogInformation("[session] {Nick} died → spectate", s.Player.Nick);
-                        }
-                        else
-                        {
-                            frames.Add((s, EncodeWorldFrame(s)));
-                        }
-                    }
-                    else
-                    {
-                        frames.Add((s, EncodeWorldFrame(s)));
-                    }
-                    if (lbFrame != null) frames.Add((s, lbFrame));
-                    if (teamLbFrame != null) frames.Add((s, teamLbFrame));
+                    if (lbFrame != null) await s.SendBinaryAsync(lbFrame, ct);
+                    if (teamLbFrame != null) await s.SendBinaryAsync(teamLbFrame, ct);
                 }
-            }
-            finally { World.Unlock(); }
 
-            if (frames != null)
-                foreach (var (s, f) in frames)
-                    await s.SendBinaryAsync(f, ct);
+            // 广播完成后再清空本帧吃事件/移除记录
+            // (击杀来自 HTTP 线程,发生在两次 tick 之间;若在下一帧 Step 开头清空,
+            //  击杀写入会被广播前的清空抹掉 → removed 段恒空 → 客户端残留无碰撞假球)
+            WorldLock.Lock();
+            try { _world.EatenEvents.Clear(); _world.RemovedIds.Clear(); }
+            finally { WorldLock.Unlock(); }
+        }
+        await challengeTask;
+    }
+
+    async Task ChallengeLoop(CancellationToken ct, PeriodicTimer timer)
+    {
+        while (await timer.WaitForNextTickAsync(ct))
+        {
+            foreach (var s in _sessions.Keys)
+            {
+                if (s.Seeded) _ = s.SendChallengeAsync(ct);
+            }
         }
     }
 
     /// <summary>
-    /// 编码 astrio 原版 50 号世界帧(客户端 AdminPanel.worldUpdate 对应):
-    /// [50][u16 added]{u32 id,u16 x,u16 y,u16 r,u16 flags[+rgb/str16 nick/u8 tab]}
-    /// [u16 updated]{u32 id,u16 x,u16 y,u16 r,u8 ghost}
-    /// [u16 eaten]{u32 prey,u32 predator}   ← 顺序:被吃者在先
-    /// [u16 removed]{u32 id}
-    /// flags:1 病毒 / 2 孢子 / 4 食物 / 8 颜色 / 16 昵称 / 64 自己 / 256 页签
+    /// 50 号全量世界帧：added=全部细胞,updated/eaten/removed 空。
+    /// flags:1 病毒 / 2 孢子 / 4 食物 / 8 颜色 / 16 昵称 / 64 自己 / 256 页签。
     /// </summary>
-    byte[] EncodeWorldFrame(Session session, bool includeLb = false)
+    byte[] EncodeWorldFull(Session session)
     {
-        var viewer = session.Player;
         var w = new BinWriter();
         w.U8(Op.WorldUpdate);
+        var mine = session.Player.Cells;
+        w.U16((ushort)Math.Min(_world.Cells.Count, ushort.MaxValue));
+        foreach (var c in _world.Cells.Values) WriteCell(w, c, mine);
+        w.U16(0);   // updated
+        w.U16(0);   // eaten
+        w.U16(0);   // removed
+        return w.ToArray();
+    }
 
-        var seenSet = session.Seen;
+    /// <summary>
+    /// 50 号增量世界帧：单次遍历分拣 added/updated（食物静止不更新）,
+    /// eaten=[victim u32][eater u32]（被吃者在先）,removed=击杀/管理移除的细胞;
+    /// seen = added ∪ old − eaten − removed（先删后加,避免同帧边界）。
+    /// </summary>
+    byte[] EncodeWorldDelta(Session session)
+    {
+        var w = new BinWriter();
+        w.U8(Op.WorldUpdate);
+        var mine = session.Player.Cells;
+        var seen = session.Seen;
+
         var added = new List<Cell>();
         var updated = new List<Cell>();
-        var removed = new List<uint>();
-        if (seenSet != null)
+        foreach (var c in _world.Cells.Values)
         {
-            foreach (var c in _world.Cells.Values)
-                if (!seenSet.Contains(c.Id)) added.Add(c);
-            foreach (var c in _world.Cells.Values)
+            if (seen.Contains(c.Id))
             {
-                if (seenSet.Contains(c.Id) && !c.IsFood) updated.Add(c);
+                if (!c.IsFood) updated.Add(c);   // 食物静止不更新
             }
+            else added.Add(c);
         }
-        else
-        {
-            foreach (var c in _world.Cells.Values) added.Add(c);
-        }
-
-        var mine = viewer.Cells;
 
         w.U16((ushort)added.Count);
-        foreach (var c in added)
-        {
-            w.U32(c.Id);
-            w.U16((ushort)Math.Clamp((int)c.X, 0, 65535));
-            w.U16((ushort)Math.Clamp((int)c.Y, 0, 65535));
-            w.U16((ushort)Math.Clamp((int)c.R, 0, 65535));
-            ushort flags = 0;
-            if (c.IsVirus) flags |= 1;
-            if (c.IsEjected) flags |= 2;
-            if (c.IsFood) flags |= 4;
-            if (c.Color != null) flags |= 8;
-            if (!string.IsNullOrEmpty(c.Nick)) flags |= 16;
-            if (mine.Contains(c)) flags |= 64;
-            if (c.Tab != 0 && mine.Contains(c)) flags |= 256;
-            w.U16(flags);
-            if ((flags & 8) != 0) { w.U8(c.Color[0]); w.U8(c.Color[1]); w.U8(c.Color[2]); }
-            if ((flags & 16) != 0) w.String16(c.Nick);
-            if ((flags & 256) != 0) w.U8(c.Tab);
-        }
+        foreach (var c in added) WriteCell(w, c, mine);
 
         w.U16((ushort)updated.Count);
         foreach (var c in updated)
@@ -156,93 +204,100 @@ public sealed class GameLoop
             w.U16((ushort)Math.Clamp((int)c.X, 0, 65535));
             w.U16((ushort)Math.Clamp((int)c.Y, 0, 65535));
             w.U16((ushort)Math.Clamp((int)c.R, 0, 65535));
-            w.U8(0);
+            w.U8(0);   // ghost=0
         }
 
         var eaten = _world.EatenEvents;
         w.U16((ushort)eaten.Count);
-        foreach (var (victim, predator) in eaten)
+        foreach (var (victim, eater) in eaten)
         {
-            w.U32(victim.Id);                       // 被吃者在先(客户端 eatCell(predator, prey))
-            w.U32(predator?.Id ?? victim.Id);       // 捕食者(无则自指,客户端丢弃该事件)
+            w.U32(victim.Id);
+            w.U32(eater.Id);
         }
 
-        w.U16(0); // removed
+        // removed：击杀/管理移除（KillPlayer/SetBots/SetViruses）的细胞 id,
+        // 客户端据此同步清掉场上残球
+        var removed = _world.RemovedIds;
+        w.U16((ushort)removed.Count);
+        foreach (var id in removed) w.U32(id);
 
-        seenSet.Clear();
-        foreach (var c in _world.Cells.Values) seenSet.Add(c.Id);
-
+        // seen 维护：先删后加（避免 add 后又被 eat 的边界）
+        foreach (var (victim, _) in eaten) seen.Remove(victim.Id);
+        foreach (var id in removed) seen.Remove(id);
+        foreach (var c in added) seen.Add(c.Id);
         return w.ToArray();
     }
 
-    /// <summary>
-    /// 编码 astrio 原版 130 号战队榜帧(EU 抓包精确字节:82 0000 0001 00 a6fd0000):
-    /// [130][u16 0][u16 1=队伍条数][u16 0=空行占位?][u32 总质量] —— 共 12 字节。
-    /// 客户端 TeamLeaderboard/TeamList 填充 TEAMS/ALLIES 面板。
-    /// </summary>
-    byte[] EncodeTeamLeaderboard()
+    static void WriteCell(BinWriter w, Cell c, HashSet<Cell> mine)
     {
-        World.Lock();
-        uint totalMass;
-        int teamCount;
-        try
+        w.U32(c.Id);
+        w.U16((ushort)Math.Clamp((int)c.X, 0, 65535));
+        w.U16((ushort)Math.Clamp((int)c.Y, 0, 65535));
+        w.U16((ushort)Math.Clamp((int)c.R, 0, 65535));
+        ushort flags = 0;
+        if (c.IsVirus) flags |= 1;
+        if (c.IsEjected) flags |= 2;
+        if (c.IsFood) flags |= 4;
+        if (c.Color != null) flags |= 8;
+        if (!string.IsNullOrEmpty(c.Nick)) flags |= 16;
+        if (mine.Contains(c)) flags |= 64;                     // 自己的细胞
+        if (c.Tab != 0 && mine.Contains(c)) flags |= 256;      // multibox 组号
+        w.U16(flags);
+        if ((flags & 8) != 0 && c.Color != null)
         {
-            totalMass = (uint)_world.Players.Values
-                .Where(p => p.Cells.Count > 0)
-                .Sum(p => (decimal)p.MassTotal);
-            teamCount = _world.Players.Values.Count(p => p.Cells.Count > 0);
+            w.U8(c.Color[0]); w.U8(c.Color[1]); w.U8(c.Color[2]);
         }
-        finally { World.Unlock(); }
-
-        var w = new BinWriter();
-        w.U8(Op.TeamLeaderboard);
-        w.U16(0);                                  // 抓包 0000
-        w.U16((ushort)Math.Min(teamCount, 65535)); // 抓包 0001
-        w.U16(0);                                  // 抓包 00 00(两字节)
-        w.U32(totalMass);                          // 抓包 a6 fd 00 00
-        return w.ToArray();
+        if ((flags & 16) != 0) w.String16(c.Nick);
+        if ((flags & 256) != 0) w.U8(c.Tab);
     }
 
     /// <summary>
-    /// 编码 astrio 原版 90 号排行榜帧(客户端 AdminPanel.getLeaderboard 对应):
-    /// [90][u8 count]{str16 tag, str16 nick, u32 mass, u8 crowned, u8 nameColorMode}
-    /// ——格式对齐 mock-server pktLeaderboard(真实客户端联调验证)。
-    /// 客户端解析: name1=string16(tag 位), name2=string16(nick 位);
-    /// tag 非空显示 "[tag] nick"; nameColorMode 0=无 1=rgb(+3B) 2=rainbow 3=gradient。
+    /// 90 号排行榜帧：[90][u8 count]{str16 tag, str16 nick, u32 mass, u8 crowned, u8 nameColorMode}。
+    /// （mock-server pktLeaderboard 同款——真实客户端联调验证过）
     /// </summary>
     byte[] EncodeLeaderboard()
     {
-        World.Lock();
-        List<(string nick, uint mass)> rows;
-        try
-        {
-            rows = _world.Players.Values
-                .Where(p => p.Cells.Count > 0)
-                .OrderByDescending(p => p.MassTotal)
-                .Take(10)
-                .Select(p => (p.Nick, (uint)p.MassTotal))
-                .ToList();
-        }
-        finally { World.Unlock(); }
-
+        var rows = _world.Players.Values
+            .Where(p => p.Cells.Count > 0)
+            .OrderByDescending(p => p.MassTotal)
+            .Take(10)
+            .ToList();
         var w = new BinWriter();
         w.U8(Op.Leaderboard);
         w.U8((byte)rows.Count);
-        foreach (var (nick, mass) in rows)
+        foreach (var p in rows)
         {
-            w.String16("");           // tag 位(空)
-            w.String16(nick + "\r");  // nick 位 —— EU 原版昵称尾部带 \r(抓包实测),必须保留
-            w.U32(mass);
+            w.String16("");           // tag 位（空）
+            w.String16(p.Nick);
+            w.U32((uint)p.MassTotal);
             w.U8(0);                  // crowned
             w.U8(0);                  // nameColorMode: 0=无
         }
         return w.ToArray();
     }
 
-    public World WorldRef => _world;
-}
+    /// <summary>
+    /// 130 号战队榜帧 —— EU 抓包精确字节（82 0000 0001 00 a6fd0000,12B）：
+    /// [130][u16 0][u16 队伍数][u16 0=空行占位][u32 全服总质量]。
+    /// </summary>
+    byte[] EncodeTeamLeaderboard()
+    {
+        uint totalMass = 0;
+        int teamCount = 0;
+        foreach (var p in _world.Players.Values)
+        {
+            if (p.Cells.Count == 0) continue;
+            totalMass += (uint)p.MassTotal;
+            teamCount++;
+        }
+        var w = new BinWriter();
+        w.U8(Op.TeamLeaderboard);
+        w.U16(0);                                  // 抓包 0000
+        w.U16((ushort)Math.Min(teamCount, 65535)); // 抓包 0001
+        w.U16(0);                                  // 抓包 00 00
+        w.U32(totalMass);                          // 抓包 a6 fd 00 00
+        return w.ToArray();
+    }
 
-public static class WorldSessionExt
-{
-    public static void RemoveSessionPlayer(this World w, Player p) => w.RemovePlayer(p);
+    public GameWorld WorldRef => _world;
 }

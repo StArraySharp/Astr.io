@@ -224,13 +224,9 @@ export default class AdminPanel {
         break;
       case 170:
         {
-          // 版本不同步:显示遮罩;无遮罩元素则直接刷新页面。
-          const overlay = this.document.getElementById('version-sync-overlay');
-          if (overlay) {
-            overlay.style.display = 'flex';
-          } else {
-            this.view.location.reload();
-          }
+          // 本地私服:170 号(版本不同步)是上行/下行流错位的典型症状,
+          // 弹遮罩只会打断排查 —— 改为 console 记录后忽略。
+          console.warn('[protocol] got 170 version-sync (stream desync symptom) — ignored');
           break;
         }
       case 171:

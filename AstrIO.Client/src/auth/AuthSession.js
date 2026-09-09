@@ -85,9 +85,8 @@ export default class AuthSession {
     const storedError = localStorage.getItem('astrio_auth_error');
     if (storedError) {
       localStorage.removeItem('astrio_auth_error');
-      if (storedError === 'banned') {
-        alert('Your Discord account has been banned from this server.');
-      }
+      // 本地私服:不复现原版 banned alert(错位残留不再打扰)
+      console.warn('[auth] stored auth_error:', storedError);
     }
     const storedToken = localStorage.getItem('astrio_discord_token');
     if (storedToken) {
@@ -172,9 +171,8 @@ export default class AuthSession {
     const storedError = localStorage.getItem('astrio_auth_error');
     if (storedError) {
       localStorage.removeItem('astrio_auth_error');
-      if (storedError === 'banned') {
-        alert('Your Discord account has been banned from this server.');
-      }
+      // 本地私服:不复现原版 banned alert(错位残留不再打扰)
+      console.warn('[auth] stored auth_error:', storedError);
     }
     this.updateUI();
     // 原:typeof bZ !== "undefined" && typeof bX !== "undefined" && bX.connected
@@ -257,7 +255,8 @@ export default class AuthSession {
   onServerAuthStatus(authRequired, flag2, banned) {
     this.authRequired = authRequired;
     if (banned) {
-      alert('Your Discord account has been banned.');
+      // 本地私服:仅登出,不弹 banned alert
+      console.warn('[auth] server reported banned — logging out');
       this.logout();
       return;
     }

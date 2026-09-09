@@ -2,7 +2,7 @@ namespace AstrIO.Server.Game;
 
 /// <summary>
 /// 世界中的一个细胞（玩家球/食物/病毒/孢子）。
-/// 物理参数逐行对齐 Ogar/MultiOgar（mass = size²/100）。
+/// 物理参数逐行对齐 Ogar/MultiOgar 与 Node server/world.js（mass = size²/100）。
 /// </summary>
 public sealed class Cell
 {
@@ -17,9 +17,10 @@ public sealed class Cell
         set { _mass = MathF.Max(1f, value); R = MathF.Sqrt(_mass * 100f); }
     }
 
-    public float R { get; private set; } = 10f;
+    public float R { get; set; } = 10f;
     public byte[] Color { get; set; } = { 200, 60, 60 };
     public string Nick { get; set; } = "";
+    public string? Skin { get; set; }
     public bool IsVirus { get; set; }
     public bool IsFood { get; set; }
     public bool IsEjected { get; set; }
@@ -37,6 +38,7 @@ public sealed class Cell
     /// <summary>出生保护：在此之前不可被同组合并/吞噬（tick）。</summary>
     public int NoMergeUntil { get; set; }
 
+    /// <summary>Ogar 速度：size^0.449 反比 ×40×1.3（40ms tick）。</summary>
     public float Speed => 2.1106f / MathF.Pow(R, 0.449f) * 40f * 1.3f;
 
     /// <summary>Ogar setBoost(distance, angle)：distance 为总射程。</summary>
@@ -61,11 +63,11 @@ public sealed class Cell
         if (BoostDistance < 1f) BoostDistance = 0;
     }
 
-    /// <summary>Ogar canRemerge：出生≥15tick 且 age ≥ max(30s, size×0.2s)。</summary>
-    public bool CanRemerge(int tick, float mergeBaseSec)
+    /// <summary>Ogar PlayerCell.canRemerge：出生≥15tick 且 age ≥ max(30s, size×0.2s)。</summary>
+    public bool CanRemerge(int tick)
     {
         if (Age < 15) return false;
-        var ttr = MathF.Max(mergeBaseSec, (int)(R * 0.2f));
-        return Age >= ttr * 25f;
+        var ttr = MathF.Max(GameWorld.MergeBaseSec, (int)(R * 0.2f));
+        return Age >= ttr * GameWorld.TicksPerSec;
     }
 }

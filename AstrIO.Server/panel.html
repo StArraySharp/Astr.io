@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<title>AstrIO Server Panel</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  /* Material You (Material Design 3) tokens — dark */
+  :root {
+    --md-primary: #a8c7fa;
+    --md-on-primary: #062e6f;
+    --md-primary-container: #0b57d0;
+    --md-on-primary-container: #d3e3fd;
+    --md-secondary-container: #3c4350;
+    --md-on-secondary-container: #d8e2f9;
+    --md-error: #ffb4ab;
+    --md-on-error-container: #93000a;
+    --md-error-container: #5c1a1b;
+    --md-surface: #111318;
+    --md-surface-container: #1d2024;
+    --md-surface-container-high: #282a2f;
+    --md-surface-container-highest: #33353a;
+    --md-on-surface: #e3e2e6;
+    --md-on-surface-variant: #c4c6d0;
+    --md-outline: #8e9099;
+    --md-outline-variant: #44474e;
+  }
+  * { box-sizing:border-box; }
+  body {
+    margin:0; background:var(--md-surface); color:var(--md-on-surface);
+    font:14px/1.5 "Google Sans","Segoe UI",system-ui,sans-serif;
+  }
+  .wrap { max-width:960px; margin:0 auto; padding:24px 20px 60px; }
+  h1 { font-size:22px; font-weight:500; margin:0; letter-spacing:.2px; }
+  .head { display:flex; align-items:center; justify-content:space-between; margin-bottom:20px; flex-wrap:wrap; gap:8px; }
+  .sub { color:var(--md-on-surface-variant); font-size:13px; }
+  .sub b { color:var(--md-primary); font-weight:500; }
+
+  /* MD3 state cards */
+  .grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:12px; margin-bottom:20px; }
+  .card {
+    background:var(--md-surface-container); border-radius:20px; padding:16px 18px;
+  }
+  .card .k { color:var(--md-on-surface-variant); font-size:12px; letter-spacing:.4px; }
+  .card .v { font-size:26px; font-weight:500; margin-top:4px; font-variant-numeric:tabular-nums; }
+
+  /* MD3 sections */
+  section {
+    background:var(--md-surface-container); border-radius:24px; padding:20px 22px; margin-bottom:16px;
+  }
+  section h2 {
+    font-size:13px; font-weight:600; letter-spacing:.8px; text-transform:uppercase;
+    color:var(--md-primary); margin:0 0 14px;
+  }
+
+  /* MD3 filled tonal buttons */
+  button {
+    background:var(--md-secondary-container); color:var(--md-on-secondary-container);
+    border:none; border-radius:999px; padding:9px 20px; cursor:pointer;
+    font-size:13.5px; font-weight:500; font-family:inherit;
+    transition:filter .15s, transform .06s;
+  }
+  button:hover { filter:brightness(1.15); }
+  button:active { transform:scale(.97); }
+  button.filled { background:var(--md-primary); color:var(--md-on-primary); }
+  .quick { display:flex; gap:8px; flex-wrap:wrap; }
+
+  /* MD3 text fields */
+  input[type=number], input[type=text] {
+    background:var(--md-surface-container-high); border:1px solid var(--md-outline-variant);
+    color:var(--md-on-surface); border-radius:14px; padding:11px 14px;
+    width:130px; font-size:14px; font-family:inherit;
+  }
+  input:focus { outline:2px solid var(--md-primary); outline-offset:-1px; border-color:transparent; }
+  .row { display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
+  .row label { min-width:120px; color:var(--md-on-surface-variant); font-size:13px; }
+
+  /* player table */
+  .ptable { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .ptable th {
+    text-align:left; color:var(--md-on-surface-variant); font-weight:500;
+    padding:8px 10px; border-bottom:1px solid var(--md-outline-variant); font-size:12px;
+    letter-spacing:.5px;
+  }
+  .ptable td { padding:7px 10px; border-bottom:1px solid var(--md-outline-variant); }
+  .ptable tr:last-child td { border-bottom:none; }
+  .ptable td.num, .ptable th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .badge {
+    display:inline-block; padding:2px 10px; border-radius:999px; font-size:11.5px; font-weight:500;
+  }
+  .badge.bot { background:var(--md-secondary-container); color:var(--md-on-secondary-container); }
+  .badge.human { background:var(--md-primary-container); color:var(--md-on-primary-container); }
+  .badge.dead { background:var(--md-surface-container-highest); color:var(--md-outline); }
+  .killbtn {
+    background:transparent; color:var(--md-error); border:1px solid var(--md-error-container);
+    padding:4px 14px; font-size:12px;
+  }
+  .killbtn:hover { background:var(--md-error-container); }
+  .filterrow { margin-bottom:10px; }
+  .filterrow input[type=text] { width:220px; }
+  .filterrow label { min-width:auto; display:flex; align-items:center; gap:6px; }
+  .filterrow input[type=checkbox] { accent-color:var(--md-primary); }
+
+  /* top list */
+  table.lb { width:100%; border-collapse:collapse; font-size:13.5px; }
+  .lb th, .lb td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--md-outline-variant); }
+  .lb th { color:var(--md-on-surface-variant); font-weight:500; font-size:12px; }
+  .lb td.num, .lb th.num { text-align:right; font-variant-numeric:tabular-nums; }
+
+  /* MD3 snackbar */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--md-surface-container-highest); color:var(--md-on-surface);
+    padding:12px 22px; border-radius:12px; opacity:0; transition:all .3s; pointer-events:none;
+    box-shadow:0 4px 16px rgba(0,0,0,.4); font-size:13.5px; max-width:80vw;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+  a { color:var(--md-primary); text-decoration:none; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <div>
+      <h1>AstrIO Server</h1>
+      <div class="sub">Material You 控制面板 · <b id="tick">-</b> tick · 所有修改实时生效</div>
+    </div>
+    <a href="/play.html" target="_blank"><button>打开游戏 ↗</button></a>
+  </div>
+
+  <div class="grid">
+    <div class="card"><div class="k">BOT</div><div class="v" id="v-bots">-</div></div>
+    <div class="card"><div class="k">真人</div><div class="v" id="v-real">-</div></div>
+    <div class="card"><div class="k">刺球</div><div class="v" id="v-virus">-</div></div>
+    <div class="card"><div class="k">食物</div><div class="v" id="v-food">-</div></div>
+    <div class="card"><div class="k">孢子</div><div class="v" id="v-ejected">-</div></div>
+    <div class="card"><div class="k">总细胞</div><div class="v" id="v-cells">-</div></div>
+  </div>
+
+  <section>
+    <h2>机器人</h2>
+    <div class="row">
+      <label>数量 (0–500)</label>
+      <input type="number" id="in-bots" min="0" max="500" value="100">
+      <button class="filled" onclick="post({bots: +$('in-bots').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({bots:0})">0</button>
+        <button onclick="post({bots:20})">20</button>
+        <button onclick="post({bots:50})">50</button>
+        <button onclick="post({bots:100})">100</button>
+        <button onclick="post({bots:200})">200</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>刺球</h2>
+    <div class="row">
+      <label>全场数量 (0–200)</label>
+      <input type="number" id="in-virus" min="0" max="200" value="3">
+      <button class="filled" onclick="post({viruses: +$('in-virus').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({viruses:0})">0</button>
+        <button onclick="post({viruses:3})">3</button>
+        <button onclick="post({viruses:10})">10</button>
+        <button onclick="post({viruses:22})">22</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>出生质量</h2>
+    <div class="row">
+      <label>spawn mass</label>
+      <input type="number" id="in-mass" min="10" max="50000" value="500">
+      <button class="filled" onclick="post({spawnMass: +$('in-mass').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({spawnMass:500})">500</button>
+        <button onclick="post({spawnMass:5000})">5k</button>
+        <button onclick="post({spawnMass:20000})">20k</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>玩家 / Bot 列表（可击杀）</h2>
+    <div class="row filterrow">
+      <input type="text" id="filter" placeholder="按名字/ID 过滤…">
+      <label><input type="checkbox" id="showDead"> 显示死亡</label>
+    </div>
+    <table class="ptable">
+      <thead><tr>
+        <th>ID</th><th>名字</th><th>类型</th><th class="num">质量</th><th class="num">分身</th><th></th>
+      </tr></thead>
+      <tbody id="players"></tbody>
+    </table>
+  </section>
+
+  <section>
+    <h2>排行榜 Top 8</h2>
+    <table class="lb">
+      <thead><tr><th>#</th><th>名字</th><th class="num">质量</th><th class="num">分身</th></tr></thead>
+      <tbody id="lb"></tbody>
+    </table>
+  </section>
+</div>
+<div id="toast"></div>
+<script>
+const $ = id => document.getElementById(id);
+const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function toast(msg) {
+  const t = $('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._h);
+  t._h = setTimeout(() => t.classList.remove('show'), 2600);
+}
+async function refresh() {
+  try {
+    const s = await (await fetch('/api/panel/state')).json();
+    $('tick').textContent = s.tick.toLocaleString();
+    $('v-bots').textContent = s.bots + ' / ' + s.botTarget;
+    $('v-real').textContent = s.real;
+    $('v-virus').textContent = s.viruses + ' / ' + s.virusTarget;
+    $('v-food').textContent = s.food.toLocaleString();
+    $('v-ejected').textContent = s.ejected;
+    $('v-cells').textContent = s.cells.toLocaleString();
+    if (document.activeElement !== $('in-bots')) $('in-bots').value = s.botTarget;
+    if (document.activeElement !== $('in-virus')) $('in-virus').value = s.virusTarget;
+    if (document.activeElement !== $('in-mass')) $('in-mass').value = s.spawnMass;
+    $('lb').innerHTML = s.top.map((p, i) =>
+      `<tr><td class="num">${i + 1}</td><td>${esc(p.nick)}</td><td class="num">${p.mass.toLocaleString()}</td><td class="num">${p.cells}</td></tr>`
+    ).join('') || '<tr><td colspan="4" style="color:var(--md-outline)">空</td></tr>';
+    renderPlayers();
+  } catch (e) { /* 短暂不可达静默 */ }
+}
+let _players = [];
+function renderPlayers() {
+  const kw = $('filter').value.trim().toLowerCase();
+  const showDead = $('showDead').checked;
+  const rows = _players
+    .filter(p => p.alive || showDead)
+    .filter(p => !kw || p.nick.toLowerCase().includes(kw) || String(p.id).includes(kw))
+    .map(p => `<tr>
+      <td class="num">${p.id}</td>
+      <td>${esc(p.nick)}</td>
+      <td><span class="badge ${p.isBot ? 'bot' : 'human'}">${p.isBot ? 'BOT' : '玩家'}</span></td>
+      <td class="num">${p.mass.toLocaleString()}</td>
+      <td class="num">${p.cells}</td>
+      <td class="num">${p.alive ? `
+        <input type="number" class="mass-input" id="mass-${p.id}" placeholder="质量" min="10" style="width:80px;padding:4px 8px;font-size:12px;border-radius:8px">
+        <button style="padding:4px 12px;font-size:12px" onclick="setMass(${p.id},'${esc(p.nick).replace(/'/g, "\\'")}')">设质量</button>
+        <button class="killbtn" onclick="kill(${p.id},'${esc(p.nick).replace(/'/g, "\\'")}')">击杀</button>` : '<span class="badge dead">死亡</span>'}</td>
+    </tr>`)
+    .join('');
+  $('players').innerHTML = rows || '<tr><td colspan="6" style="color:var(--md-outline)">无匹配</td></tr>';
+}
+async function loadPlayers() {
+  try { _players = await (await fetch('/api/panel/players')).json(); renderPlayers(); } catch (e) {}
+}
+function kill(id, nick) {
+  if (!confirm(`击杀 [${nick}] ?`)) return;
+  post({ killId: id });
+}
+function setMass(id, nick) {
+  const v = document.getElementById('mass-' + id)?.value;
+  if (!v) { toast('请输入质量'); return; }
+  post({ massId: id, mass: +v });
+}
+async function post(body) {
+  const r = await (await fetch('/api/panel/set', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  })).json();
+  toast(r.results && r.results.length ? r.results.join(' · ') : 'done');
+  refresh();
+  setTimeout(loadPlayers, 300);
+}
+$('filter').addEventListener('input', renderPlayers);
+$('showDead').addEventListener('change', renderPlayers);
+refresh();
+loadPlayers();
+
+// ★ 焦点保护：正在输入时（质量框/过滤框/任何输入元素聚焦）跳过列表重渲染,
+//   避免 renderPlayers() 整表 innerHTML 重建导致输入框失焦
+function inputActive() {
+  const el = document.activeElement;
+  return el && (el.tagName === 'INPUT' || el.tagName === 'TEXTAREA');
+}
+setInterval(() => { if (!inputActive()) refresh(); }, 1000);
+setInterval(() => { if (!inputActive()) loadPlayers(); }, 2000);
+
+// 失焦后立即补一次刷新,保证数据不滞后
+document.addEventListener('visibilitychange', () => {
+  if (!document.hidden && !inputActive()) { refresh(); loadPlayers(); }
+});
+window.addEventListener('focus', () => { if (!inputActive()) { refresh(); loadPlayers(); } });
+// 输入框失焦时也补刷新（用户改完数字点别处,列表恢复实时）
+document.addEventListener('focusout', (e) => {
+  if (e.target && (e.target.classList?.contains('mass-input') || e.target.id === 'filter')) {
+    setTimeout(() => { if (!inputActive()) { refresh(); loadPlayers(); } }, 120);
+  }
+});
+</script>
+</body>
+</html>
