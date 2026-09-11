@@ -24,7 +24,7 @@ for (const file of walk(srcDir)) {
 console.log(`parse: ${ok} ok, ${fail} fail`);
 
 // --- 冒烟:纯 JS 编解码器往返(与 wasm 已差分验证) ---
-const cipher = await import(pathToFileURL(join(srcDir, 'net', 'codecCipher.js')));
+const cipher = await import(pathToFileURL(join(srcDir, 'js', 'net', 'codecCipher.js')));
 const enc = cipher.initEncryptor([0x11223344, 0x55667788, 0x99aabbcc, 0xddeeff00]);
 const dec = cipher.initDecryptor([0x11223344, 0x55667788, 0x99aabbcc, 0xddeeff00]);
 const data = new Uint8Array(101);
@@ -35,7 +35,7 @@ if (data.every((v, i) => v === plain[i])) { console.log('smoke: FAIL — encode 
 else console.log('smoke: cipher keystream applied ok');
 
 // --- 冒烟:p9 解释器(对照内置向量:k7=0 时 p9(0,0)=0x3450f59d) ---
-const { p9 } = await import(pathToFileURL(join(srcDir, 'net', 'p9Interpreter.js')));
+const { p9 } = await import(pathToFileURL(join(srcDir, 'js', 'net', 'p9Interpreter.js')));
 const g = new Int32Array(16);
 const v = p9(0, 0, g) >>> 0;
 if (v === 0x3450f59d) console.log('smoke: p9 vector ok');

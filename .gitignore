@@ -5,6 +5,7 @@ node_modules/
 bin/
 obj/
 *.user
+*.pubxml.user
 
 # --- 运行时产物 ---
 *.log
@@ -13,14 +14,37 @@ logs/
 # --- 临时/本地 ---
 tmp/
 *.tmp
+*.tmp.js
 .DS_Store
 Thumbs.db
+src-backup-tmp/
 
 # --- 编辑器 ---
 .vs/
 .vscode/*
 !.vscode/settings.json
 !.vscode/tasks.json
+.idea/
 
-# --- 服务器运行时数据(如后续加持久化) ---
+# --- 服务器运行时数据 ---
 AstrIO.Server/data/
+AstrIO.Server/Diag/
+AstrIO.Server/replays/
+AstrIO.Server/config.json
+
+# --- 客户端:逆向/构建临时产物 ---
+AstrIO.Client/wat/
+AstrIO.Client/site/
+
+# --- Capacitor android 项目 ---
+# 跟踪项目源文件(配置/gradle 脚本/java 源),忽略构建与同步产物
+AstrIO.Client/android/.gradle/
+AstrIO.Client/android/build/
+AstrIO.Client/android/app/build/
+AstrIO.Client/android/local.properties
+AstrIO.Client/android/app/src/main/assets/public/
+AstrIO.Client/android/capacitor-cordova-android-plugins/
+AstrIO.Client/android/.idea/
+AstrIO.Client/android/*.iml
+AstrIO.Client/android/app/*.iml
+AstrIO.Client/android/captures/

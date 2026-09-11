@@ -75,6 +75,22 @@
   .row { display:flex; align-items:center; gap:12px; margin-bottom:12px; flex-wrap:wrap; }
   .row label { min-width:120px; color:var(--md-on-surface-variant); font-size:13px; }
 
+  /* 游戏规则开关 */
+  .switch-row { gap:20px; }
+  .switch-label {
+    display:flex; align-items:center; gap:10px; cursor:pointer; user-select:none;
+    color:var(--md-on-surface); font-size:14px; min-width:auto !important;
+  }
+  .switch-label input[type=checkbox] {
+    width:20px; height:20px; accent-color:var(--md-primary); cursor:pointer;
+  }
+  .persist-tag {
+    font-size:10.5px; padding:1px 8px; border-radius:999px; font-weight:500;
+    letter-spacing:.3px; vertical-align:1px;
+  }
+  .persist-tag.a { background:rgba(168,199,250,.15); color:var(--md-primary); }
+  .persist-tag.b { background:rgba(255,180,171,.12); color:var(--md-error); }
+
   /* player table */
   .ptable { width:100%; border-collapse:collapse; font-size:13.5px; }
   .ptable th {
@@ -85,6 +101,10 @@
   .ptable td { padding:7px 10px; border-bottom:1px solid var(--md-outline-variant); }
   .ptable tr:last-child td { border-bottom:none; }
   .ptable td.num, .ptable th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .ptable td.rank { font-weight:600; color:var(--md-on-surface-variant); }
+  .ptable td.rank.top1 { color:#ffd66e; }
+  .ptable td.rank.top2 { color:#c8d3dd; }
+  .ptable td.rank.top3 { color:#e0a06a; }
   .badge {
     display:inline-block; padding:2px 10px; border-radius:999px; font-size:11.5px; font-weight:500;
   }
@@ -100,12 +120,6 @@
   .filterrow input[type=text] { width:220px; }
   .filterrow label { min-width:auto; display:flex; align-items:center; gap:6px; }
   .filterrow input[type=checkbox] { accent-color:var(--md-primary); }
-
-  /* top list */
-  table.lb { width:100%; border-collapse:collapse; font-size:13.5px; }
-  .lb th, .lb td { text-align:left; padding:6px 10px; border-bottom:1px solid var(--md-outline-variant); }
-  .lb th { color:var(--md-on-surface-variant); font-weight:500; font-size:12px; }
-  .lb td.num, .lb th.num { text-align:right; font-variant-numeric:tabular-nums; }
 
   /* MD3 snackbar */
   #toast {
@@ -125,7 +139,7 @@
       <h1>AstrIO Server</h1>
       <div class="sub">Material You 控制面板 · <b id="tick">-</b> tick · 所有修改实时生效</div>
     </div>
-    <a href="/play.html" target="_blank"><button>打开游戏 ↗</button></a>
+    <a href="http://localhost:8123/play.html" target="_blank"><button>打开游戏 ↗</button></a>
   </div>
 
   <div class="grid">
@@ -135,6 +149,7 @@
     <div class="card"><div class="k">食物</div><div class="v" id="v-food">-</div></div>
     <div class="card"><div class="k">孢子</div><div class="v" id="v-ejected">-</div></div>
     <div class="card"><div class="k">总细胞</div><div class="v" id="v-cells">-</div></div>
+    <div class="card"><div class="k">AI 难度</div><div class="v" id="v-diff">-</div></div>
   </div>
 
   <section>
@@ -149,6 +164,15 @@
         <button onclick="post({bots:50})">50</button>
         <button onclick="post({bots:100})">100</button>
         <button onclick="post({bots:200})">200</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>AI 难度（Nebulous 参数表,即时作用于全部 bot）</label>
+      <div class="quick">
+        <button onclick="post({difficulty:'easy'})">Easy</button>
+        <button onclick="post({difficulty:'medium'})">Medium</button>
+        <button onclick="post({difficulty:'hard'})">Hard</button>
+        <button class="filled" onclick="post({difficulty:'impossible'})">IMPOSSIBLE ☠</button>
       </div>
     </div>
   </section>
@@ -183,28 +207,102 @@
   </section>
 
   <section>
-    <h2>玩家 / Bot 列表（可击杀）</h2>
+    <h2>游戏规则</h2>
+    <div class="row switch-row">
+      <label class="switch-label">
+        <input type="checkbox" id="in-autosplit" checked>
+        <span>20k 自动分裂 <small class="persist-tag a">存配置</small></span>
+      </label>
+      <label class="switch-label">
+        <input type="checkbox" id="in-subspawn" checked>
+        <span>允许创建子球 <small class="persist-tag a">存配置</small></span>
+      </label>
+    </div>
+    <div class="row">
+      <label>自动分裂阈值</label>
+      <input type="number" id="in-autosplitmass" min="100" max="200000" value="20000">
+      <button onclick="post({autoSplitMass: +$('in-autosplitmass').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({autoSplitMass:20000})">20k</button>
+        <button onclick="post({autoSplitMass:50000})">50k</button>
+        <button onclick="post({autoSplitMass:100000})">100k</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>质量衰减倍率</label>
+      <input type="number" id="in-decay" min="0" max="5" step="0.1" value="0.3">
+      <button onclick="post({decayScale: +$('in-decay').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({decayScale:0})">不衰减</button>
+        <button onclick="post({decayScale:0.3})">0.3</button>
+        <button onclick="post({decayScale:1})">原版</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>吐球 / 孢子</h2>
+    <div class="row">
+      <label>吐球射程/速度</label>
+      <input type="number" id="in-ejectdist" min="200" max="5000" step="20" value="1400">
+      <button onclick="post({ejectDistance: +$('in-ejectdist').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({ejectDistance:780})">原版 780</button>
+        <button onclick="post({ejectDistance:1400})">1400</button>
+        <button onclick="post({ejectDistance:2500})">2500</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>孢子质量 ejectSize</label>
+      <input type="number" id="in-ejectsize" min="10" max="100" value="38">
+      <button onclick="post({ejectSize: +$('in-ejectsize').value})">应用</button>
+    </div>
+    <div class="row">
+      <label>吐球损耗 ejectLoss</label>
+      <input type="number" id="in-ejectloss" min="10" max="100" value="38">
+      <button onclick="post({ejectSizeLoss: +$('in-ejectloss').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({ejectSizeLoss:38, ejectSize:38})">零损耗</button>
+        <button onclick="post({ejectSizeLoss:43, ejectSize:38})">原版</button>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>玩家排行（按质量）</h2>
     <div class="row filterrow">
       <input type="text" id="filter" placeholder="按名字/ID 过滤…">
       <label><input type="checkbox" id="showDead"> 显示死亡</label>
     </div>
     <table class="ptable">
       <thead><tr>
-        <th>ID</th><th>名字</th><th>类型</th><th class="num">质量</th><th class="num">分身</th><th></th>
+        <th class="num">#</th><th>ID</th><th>名字</th><th>类型</th><th class="num">质量</th><th class="num">分身</th><th></th>
       </tr></thead>
       <tbody id="players"></tbody>
     </table>
   </section>
-
-  <section>
-    <h2>排行榜 Top 8</h2>
-    <table class="lb">
-      <thead><tr><th>#</th><th>名字</th><th class="num">质量</th><th class="num">分身</th></tr></thead>
-      <tbody id="lb"></tbody>
-    </table>
-  </section>
 </div>
 <div id="toast"></div>
+
+<!-- ===== 密码登录门：认证通过前盖住整个面板 ===== -->
+<div id="gate" style="display:none; position:fixed; inset:0; z-index:999;
+     background:var(--md-surface); display:none; align-items:center; justify-content:center;">
+  <div style="width:min(360px,90vw); background:var(--md-surface-container); border-radius:24px; padding:32px 28px;">
+    <h2 id="gate-title" style="margin:0 0 6px; font-size:20px; font-weight:500;">控制面板</h2>
+    <p id="gate-hint" style="margin:0 0 20px; color:var(--md-on-surface-variant); font-size:13px;">输入密码以继续</p>
+    <input id="gate-pwd" type="password" autocomplete="current-password" placeholder="密码"
+           style="width:100%; padding:12px 16px; font-size:15px; border:1px solid var(--md-outline-variant);
+                  border-radius:14px; background:var(--md-surface-container-high); color:var(--md-on-surface); outline:none;" />
+    <input id="gate-pwd2" type="password" placeholder="再输一遍确认"
+           style="display:none; width:100%; margin-top:10px; padding:12px 16px; font-size:15px;
+                  border:1px solid var(--md-outline-variant); border-radius:14px;
+                  background:var(--md-surface-container-high); color:var(--md-on-surface); outline:none;" />
+    <div id="gate-err" style="color:var(--md-error); font-size:13px; min-height:20px; margin-top:8px;"></div>
+    <button id="gate-go" style="width:100%; padding:12px; margin-top:4px; border:none; border-radius:999px;
+            background:var(--md-primary-container); color:var(--md-on-primary-container);
+            font-size:15px; font-weight:500; cursor:pointer;">解锁</button>
+  </div>
+</div>
 <script>
 const $ = id => document.getElementById(id);
 const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -225,12 +323,17 @@ async function refresh() {
     $('v-food').textContent = s.food.toLocaleString();
     $('v-ejected').textContent = s.ejected;
     $('v-cells').textContent = s.cells.toLocaleString();
+    $('v-diff').textContent = s.botDifficulty || '-';
     if (document.activeElement !== $('in-bots')) $('in-bots').value = s.botTarget;
     if (document.activeElement !== $('in-virus')) $('in-virus').value = s.virusTarget;
     if (document.activeElement !== $('in-mass')) $('in-mass').value = s.spawnMass;
-    $('lb').innerHTML = s.top.map((p, i) =>
-      `<tr><td class="num">${i + 1}</td><td>${esc(p.nick)}</td><td class="num">${p.mass.toLocaleString()}</td><td class="num">${p.cells}</td></tr>`
-    ).join('') || '<tr><td colspan="4" style="color:var(--md-outline)">空</td></tr>';
+    if (document.activeElement !== $('in-autosplitmass')) $('in-autosplitmass').value = s.autoSplitMass;
+    if (document.activeElement !== $('in-decay')) $('in-decay').value = s.decayScale;
+    if (document.activeElement !== $('in-ejectdist')) $('in-ejectdist').value = s.ejectDistance;
+    if (document.activeElement !== $('in-ejectsize')) $('in-ejectsize').value = s.ejectSize;
+    if (document.activeElement !== $('in-ejectloss')) $('in-ejectloss').value = s.ejectSizeLoss;
+    if (document.activeElement !== $('in-autosplit')) $('in-autosplit').checked = !!s.autoSplitEnabled;
+    if (document.activeElement !== $('in-subspawn')) $('in-subspawn').checked = !!s.subSpawnEnabled;
     renderPlayers();
   } catch (e) { /* 短暂不可达静默 */ }
 }
@@ -241,7 +344,8 @@ function renderPlayers() {
   const rows = _players
     .filter(p => p.alive || showDead)
     .filter(p => !kw || p.nick.toLowerCase().includes(kw) || String(p.id).includes(kw))
-    .map(p => `<tr>
+    .map((p, i) => `<tr>
+      <td class="num rank${i < 3 ? ' top' + (i + 1) : ''}">${i + 1}</td>
       <td class="num">${p.id}</td>
       <td>${esc(p.nick)}</td>
       <td><span class="badge ${p.isBot ? 'bot' : 'human'}">${p.isBot ? 'BOT' : '玩家'}</span></td>
@@ -253,7 +357,7 @@ function renderPlayers() {
         <button class="killbtn" onclick="kill(${p.id},'${esc(p.nick).replace(/'/g, "\\'")}')">击杀</button>` : '<span class="badge dead">死亡</span>'}</td>
     </tr>`)
     .join('');
-  $('players').innerHTML = rows || '<tr><td colspan="6" style="color:var(--md-outline)">无匹配</td></tr>';
+  $('players').innerHTML = rows || '<tr><td colspan="7" style="color:var(--md-outline)">无匹配</td></tr>';
 }
 async function loadPlayers() {
   try { _players = await (await fetch('/api/panel/players')).json(); renderPlayers(); } catch (e) {}
@@ -278,6 +382,71 @@ async function post(body) {
 }
 $('filter').addEventListener('input', renderPlayers);
 $('showDead').addEventListener('change', renderPlayers);
+
+/* ===== 密码门逻辑 =====
+   服务端把 SHA256 存 config.json；空/非十六进制 = 未设置 → 首次访问要求设置密码。
+   认证前所有 /api/panel/* 都 401，页面数据拿不到，面板等于锁死。 */
+const gate = $('gate');
+let gateNeedSetup = false;
+
+function showGate(setup) {
+  gateNeedSetup = setup;
+  $('gate-title').textContent = setup ? '首次使用 · 设置密码' : '控制面板已锁定';
+  $('gate-hint').textContent = setup
+    ? '尚未设置面板密码（明文不会保存，只存 SHA256）'
+    : '输入密码以继续';
+  $('gate-pwd2').style.display = setup ? '' : 'none';
+  $('gate-go').textContent = setup ? '设置并进入' : '解锁';
+  gate.style.display = 'flex';
+  $('gate-err').textContent = '';
+  setTimeout(() => $('gate-pwd').focus(), 60);
+}
+
+async function tryAuth() {
+  const pwd = $('gate-pwd').value;
+  $('gate-err').textContent = '';
+  if (gateNeedSetup && pwd !== $('gate-pwd2').value) {
+    $('gate-err').textContent = '两次输入不一致';
+    return;
+  }
+  try {
+    const r = await fetch('/api/panel/auth', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ password: pwd }),
+    });
+    const j = await r.json().catch(() => ({}));
+    if (r.ok && j.ok) {
+      gate.style.display = 'none';
+      $('gate-pwd').value = ''; $('gate-pwd2').value = '';
+      refresh(); loadPlayers();
+    } else {
+      $('gate-err').textContent = j.error || `失败 (${r.status})`;
+      if (j.error === 'unauthorized') showGate(false);
+    }
+  } catch (e) {
+    $('gate-err').textContent = '网络错误: ' + e.message;
+  }
+}
+
+$('gate-go').addEventListener('click', tryAuth);
+$('gate-pwd').addEventListener('keydown', e => { if (e.key === 'Enter') tryAuth(); });
+$('gate-pwd2').addEventListener('keydown', e => { if (e.key === 'Enter') tryAuth(); });
+
+// 页面加载即探测认证状态：401 → 弹门（服务端会告诉我们要不要首次设置）
+(async function gateInit() {
+  try {
+    const r = await fetch('/api/panel/auth');
+    const j = await r.json();
+    if (j.authed) return;               // 已登录，不弹
+    showGate(!!j.needSetup);
+  } catch (e) {
+    showGate(false);                    // 探测失败也弹（保守锁定）
+  }
+})();
+
+// 开关即改即发
+$('in-autosplit').addEventListener('change', e => post({ autoSplitEnabled: e.target.checked }));
+$('in-subspawn').addEventListener('change', e => post({ subSpawnEnabled: e.target.checked }));
 refresh();
 loadPlayers();
 

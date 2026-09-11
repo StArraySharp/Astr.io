@@ -1,0 +1,13 @@
+{
+  "appId": "io.astrio.client",
+  "appName": "AstrIO",
+  "webDir": "src",
+  "server": {
+    "androidScheme": "http"
+  },
+  "android": {
+    "allowMixedContent": true,
+    "backgroundColor": "#0b0b12",
+    "webContentsDebuggingEnabled": true
+  }
+}

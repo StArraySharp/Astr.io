@@ -50,9 +50,16 @@ public sealed class Session
         _world = world;
         _log = log;
         Mode = mode;
-        Player = world.AddPlayer("Player" + Random.Shared.Next(100, 999));
-        Player.Mode = mode;
-        Player.Session = this;
+        // ★ 必须持 WorldLock：GameLoop 的 Step() 正在 foreach (Players.Values)，
+        //   ws 线程裸改字典会抛 "Collection was modified"（实测每个玩家加入瞬间都会崩一次）
+        WorldLock.Lock();
+        try
+        {
+            Player = world.AddPlayer("Player" + Random.Shared.Next(100, 999));
+            Player.Mode = mode;
+            Player.Session = this;
+        }
+        finally { WorldLock.Unlock(); }
     }
 
     /// <summary>
@@ -212,11 +219,14 @@ public sealed class Session
                     _world.SetMouse(Player, (byte)(tab == 0 ? 1 : tab), x, y);
                     break;
                 }
-                case Op.Split: // [50][u8 tab][u8 flag]
+                case Op.Split: // [50][u8 tab][u8 count]（count=分裂轮数）
                 {
                     var tab = r.U8();
-                    r.U8();
-                    _world.Split(Player, (byte)(tab == 0 ? Player.ActiveTab : tab));
+                    var count = r.U8();
+                    // 只累加到待办,由 GameWorld.Step 每 tick 消化 1 轮:
+                    // 同一 tick 内连分的活在步进前, 球还没位移, 分身会全叠在一个点上
+                    Player.PendingSplitTab = (byte)(tab == 0 ? Player.ActiveTab : tab);
+                    Player.PendingSplits = Math.Min(Player.PendingSplits + Math.Max((int)count, 1), 64);
                     break;
                 }
                 case Op.Eject: // [40][u8 tab]

@@ -1,5 +1,6 @@
 using System.Net.WebSockets;
 using System.Text.Json;
+using System.Text.RegularExpressions;
 using AstrIO.Server;
 using AstrIO.Server.Game;
 
@@ -18,7 +19,53 @@ builder.WebHost.UseUrls(
 
 var app = builder.Build();
 var gameLoop = app.Services.GetRequiredService<GameLoop>();
+// 读取持久化配置(首次运行写出默认 config.json)并注入路径供后续保存
+var world = gameLoop.WorldRef;
+world.ConfigPath = Path.Combine(app.Environment.ContentRootPath, "config.json");
+world.LoadConfig();
 app.UseCors("poll");
+
+// ---------- 控制面板密码校验 ----------
+// 密码以 SHA256 十六进制存 config.json（**明文不落盘**）。
+// 存储值为空 / 非 64 位十六进制 = 尚未设置 → 首次访问时要求用户设置密码。
+// 登录成功发一个随机 token（内存态，重启失效需重登），Cookie: panel_auth。
+var panelTokens = new HashSet<string>();
+
+static string Sha256Hex(string s) =>
+    Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+        System.Text.Encoding.UTF8.GetBytes(s))).ToLowerInvariant();
+
+static bool IsValidHash(string? h) =>
+    !string.IsNullOrWhiteSpace(h) && h.Length == 64 && h.All(Uri.IsHexDigit);
+
+bool PanelAuthed(HttpContext ctx) =>
+    ctx.Request.Cookies.TryGetValue("panel_auth", out var t) && t != null && panelTokens.Contains(t);
+
+void Grant(HttpContext ctx)
+{
+    var token = Guid.NewGuid().ToString("N");
+    panelTokens.Add(token);
+    ctx.Response.Cookies.Append("panel_auth", token, new CookieOptions
+    {
+        HttpOnly = true,
+        SameSite = SameSiteMode.Lax,
+        Path = "/",
+    });
+}
+
+// 拦 /api/panel/*（auth 端点本身除外）：未认证一律 401，前端据此弹登录框
+app.Use(async (ctx, next) =>
+{
+    var path = ctx.Request.Path.Value ?? "";
+    if (path.StartsWith("/api/panel") && !path.StartsWith("/api/panel/auth") && !PanelAuthed(ctx))
+    {
+        ctx.Response.StatusCode = 401;
+        await ctx.Response.WriteAsJsonAsync(new { error = "unauthorized" });
+        return;
+    }
+    await next();
+});
+
 app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(30) });
 
 // 原版客户端静态文件（仓库根：index.html + js/ 等,与 Node 私服同布局）
@@ -114,6 +161,59 @@ app.Map("/chat", async (HttpContext ctx) =>
 
 // ---------- Web 控制面板（实时生效） ----------
 
+/// <summary>认证状态：needSetup = 从未设置密码（要求首次设置），authed = 已登录。</summary>
+app.MapGet("/api/panel/auth", (HttpContext ctx, GameLoop loop) =>
+{
+    var needSetup = !IsValidHash(loop.WorldRef.PanelPasswordHash);
+    return Results.Json(new { needSetup, authed = !needSetup && PanelAuthed(ctx) });
+});
+
+/// <summary>登录 / 首次设置密码。请求体 { password }。</summary>
+app.MapPost("/api/panel/auth", async (HttpContext ctx, GameLoop loop) =>
+{
+    var pwd = "";
+    try
+    {
+        using var doc = await JsonDocument.ParseAsync(ctx.Request.Body, cancellationToken: ctx.RequestAborted);
+        if (doc.RootElement.TryGetProperty("password", out var pe)) pwd = pe.GetString() ?? "";
+    }
+    catch { /* 体不合法 → 当空密码处理 */ }
+
+    if (pwd.Length == 0)
+        return Results.Json(new { ok = false, error = "密码不能为空" }, statusCode: 400);
+
+    var w = loop.WorldRef;
+
+    // ---- 首次：设置密码 ----
+    if (!IsValidHash(w.PanelPasswordHash))
+    {
+        if (pwd.Length < 4)
+            return Results.Json(new { ok = false, error = "密码至少 4 位" }, statusCode: 400);
+        w.PanelPasswordHash = Sha256Hex(pwd);
+        w.SaveConfig();
+        Grant(ctx);
+        return Results.Json(new { ok = true, setup = true });
+    }
+
+    // ---- 校验：比 SHA256 十六进制串，固定时间比较防时序侧信道 ----
+    var given = System.Text.Encoding.UTF8.GetBytes(Sha256Hex(pwd));
+    var stored = System.Text.Encoding.UTF8.GetBytes(w.PanelPasswordHash.Trim().ToLowerInvariant());
+    if (given.Length != stored.Length ||
+        !System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(given, stored))
+        return Results.Json(new { ok = false, error = "密码错误" }, statusCode: 401);
+
+    Grant(ctx);
+    return Results.Json(new { ok = true });
+});
+
+/// <summary>登出（丢弃 token + 清 Cookie）。</summary>
+app.MapPost("/api/panel/logout", (HttpContext ctx) =>
+{
+    if (ctx.Request.Cookies.TryGetValue("panel_auth", out var t) && t != null) panelTokens.Remove(t);
+    ctx.Response.Cookies.Delete("panel_auth", new CookieOptions { Path = "/" });
+    return Results.Json(new { ok = true });
+});
+
 app.MapGet("/panel", async (HttpContext ctx) =>
 {
     // panel.html 查找顺序:ContentRoot(开发/dotnet run) → ContentRoot/bin/...(发布部署)
@@ -134,6 +234,11 @@ app.MapGet("/panel", async (HttpContext ctx) =>
     ctx.Response.ContentType = "text/html; charset=utf-8";
     await ctx.Response.WriteAsync(html, ctx.RequestAborted);
 });
+
+// [临时诊断] 离线跑一次"停移+多轮分裂",输出共线性/间距指标(排查完删除)
+app.MapGet("/api/diag/linesplit", (int? rounds, int? ticks, float? dirDeg, float? mass, bool? sameTick) =>
+    Results.Json(AstrIO.Server.Diag.LineSplitProbe.Run(
+        rounds ?? 4, ticks ?? 60, dirDeg ?? 0f, mass ?? 20000f, sameTick ?? true)));
 
 app.MapGet("/api/panel/state", (GameLoop loop) =>
 {
@@ -166,6 +271,13 @@ app.MapGet("/api/panel/state", (GameLoop loop) =>
         cells = w.Cells.Count,
         spawnMass = w.SpawnMass,
         autoSplitMass = GameWorld.AutoSplitMass,
+        autoSplitEnabled = GameWorld.AutoSplitEnabled,
+        subSpawnEnabled = GameWorld.SubSpawnEnabled,
+        decayScale = GameWorld.DecayScale,
+        ejectSize = GameWorld.EjectSize,
+        ejectSizeLoss = GameWorld.EjectSizeLoss,
+        ejectDistance = GameWorld.EjectDistance,
+        botDifficulty = w.BotDifficulty.ToString(),
         top,
     });
 });
@@ -178,15 +290,73 @@ app.MapPost("/api/panel/set", async (HttpContext ctx, GameLoop loop) =>
     WorldLock.Lock();
     try
     {
+        var changed = false;
         if (root.TryGetProperty("bots", out var botsEl) && botsEl.TryGetInt32(out var bots))
+        {
             results.Add(loop.WorldRef.SetBots(bots));
+            changed = true;
+        }
         if (root.TryGetProperty("viruses", out var virEl) && virEl.TryGetInt32(out var vir))
+        {
             results.Add(loop.WorldRef.SetViruses(vir));
+            changed = true;
+        }
         if (root.TryGetProperty("spawnMass", out var smEl) && smEl.TryGetSingle(out var sm))
         {
             loop.WorldRef.SetSpawnMass(sm);
             results.Add($"spawnMass={loop.WorldRef.SpawnMass}");
+            changed = true;
         }
+        if (root.TryGetProperty("autoSplitMass", out var asmEl) && asmEl.TryGetSingle(out var asm))
+        {
+            GameWorld.AutoSplitMass = MathF.Max(asm, 100f);
+            results.Add($"autoSplitMass={GameWorld.AutoSplitMass}");
+            changed = true;
+        }
+        if (root.TryGetProperty("difficulty", out var diffEl))
+        {
+            results.Add(loop.WorldRef.SetBotDifficulty(diffEl.GetString() ?? ""));
+            changed = true;
+        }
+        if (root.TryGetProperty("decayScale", out var dscEl) && dscEl.TryGetSingle(out var dsc))
+        {
+            GameWorld.DecayScale = Math.Clamp(dsc, 0f, 5f);
+            results.Add($"decayScale={GameWorld.DecayScale}");
+            changed = true;
+        }
+        if (root.TryGetProperty("ejectSize", out var esEl) && esEl.TryGetSingle(out var es))
+        {
+            GameWorld.EjectSize = Math.Clamp(es, 10f, 100f);
+            results.Add($"ejectSize={GameWorld.EjectSize}");
+            changed = true;
+        }
+        if (root.TryGetProperty("ejectSizeLoss", out var eslEl) && eslEl.TryGetSingle(out var esl))
+        {
+            GameWorld.EjectSizeLoss = Math.Clamp(esl, 10f, 100f);
+            results.Add($"ejectSizeLoss={GameWorld.EjectSizeLoss}");
+            changed = true;
+        }
+        if (root.TryGetProperty("ejectDistance", out var edEl) && edEl.TryGetSingle(out var ed))
+        {
+            GameWorld.EjectDistance = Math.Clamp(ed, 200f, 5000f);
+            results.Add($"ejectDistance={GameWorld.EjectDistance}");
+            changed = true;
+        }
+        // 开关类(bool)
+        if (root.TryGetProperty("autoSplitEnabled", out var aseEl) && (aseEl.ValueKind == JsonValueKind.True || aseEl.ValueKind == JsonValueKind.False))
+        {
+            GameWorld.AutoSplitEnabled = aseEl.GetBoolean();
+            results.Add($"autoSplitEnabled={GameWorld.AutoSplitEnabled}");
+            changed = true;
+        }
+        if (root.TryGetProperty("subSpawnEnabled", out var sseEl) && (sseEl.ValueKind == JsonValueKind.True || sseEl.ValueKind == JsonValueKind.False))
+        {
+            GameWorld.SubSpawnEnabled = sseEl.GetBoolean();
+            results.Add($"subSpawnEnabled={GameWorld.SubSpawnEnabled}");
+            changed = true;
+        }
+        // 任何可持久化参数变更 → 写 config.json(重启后自动恢复)
+        if (changed) loop.WorldRef.SaveConfig();
         if (root.TryGetProperty("killId", out var kidEl) && kidEl.TryGetUInt32(out var kid))
         {
             var r = loop.WorldRef.KillPlayer(kid);
@@ -222,4 +392,61 @@ app.MapGet("/api/panel/players", (GameLoop loop) =>
     finally { WorldLock.Unlock(); }
 });
 
+/// <summary>bot AI 诊断快照（状态机/威胁/猎物/位置/分组）—— 调试与自动化测试用。</summary>
+app.MapGet("/api/panel/ai", (GameLoop loop) =>
+{
+    WorldLock.Lock();
+    try { return Results.Json(loop.WorldRef.ListBotAi()); }
+    finally { WorldLock.Unlock(); }
+});
+// ---------- 回放上传/下载（存 ContentRoot/replays/,不经面板认证——游戏功能） ----------
+var replayDir = Path.Combine(app.Environment.ContentRootPath, "replays");
+Directory.CreateDirectory(replayDir);
+
+// 合法文件名:yyyymmdd_hhmmss.astr.io(防路径穿越)
+static bool ValidReplayName(string? name) =>
+    !string.IsNullOrWhiteSpace(name)
+    && name.EndsWith(".astr.io")
+    && Regex.IsMatch(name, @"^\d{8}_\d{6}\.astr\.io$");
+
+/// <summary>上传回放。multipart/form-data 字段 file;同名覆盖(同一秒内重存)。</summary>
+app.MapPost("/api/replay/upload", async (HttpContext ctx) =>
+{
+    var req = ctx.Request;
+    if (!req.HasFormContentType)
+        return Results.BadRequest(new { error = "form-data required" });
+    var form = await req.ReadFormAsync(ctx.RequestAborted);
+    var file = form.Files.GetFile("file");
+    if (file == null || file.Length == 0)
+        return Results.BadRequest(new { error = "file missing" });
+    if (file.Length > 20 * 1024 * 1024)
+        return Results.BadRequest(new { error = "too large (>20MB)" });
+    var name = Path.GetFileName(file.FileName);
+    if (!ValidReplayName(name))
+        return Results.BadRequest(new { error = "bad name" });
+    await using var fs = File.Create(Path.Combine(replayDir, name));
+    await file.CopyToAsync(fs, ctx.RequestAborted);
+    return Results.Json(new { ok = true, name, size = file.Length });
+}).DisableAntiforgery();
+
+/// <summary>列出服务器上全部回放(名字+大小+时间,倒序)。</summary>
+app.MapGet("/api/replay/list", () =>
+{
+    var list = Directory.GetFiles(replayDir, "*.astr.io")
+        .Select(p => new FileInfo(p))
+        .OrderByDescending(f => f.Name)
+        .Select(f => new { name = f.Name, size = f.Length, at = f.LastWriteTimeUtc })
+        .ToList();
+    return Results.Json(list);
+});
+
+/// <summary>下载回放(浏览器直接存盘;手机上由下载管理器接管)。</summary>
+app.MapGet("/api/replay/download/{name}", (string name) =>
+{
+    if (!ValidReplayName(name)) return Results.BadRequest(new { error = "bad name" });
+    var p = Path.Combine(replayDir, name);
+    return File.Exists(p)
+        ? Results.File(p, "application/octet-stream", name)
+        : Results.NotFound(new { error = "not found" });
+});
 app.Run();

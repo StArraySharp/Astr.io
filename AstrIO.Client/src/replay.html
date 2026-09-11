@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Astrio — Replay Viewer</title>
+  <meta charset="utf-8">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <script>window.REPLAY_MODE = true;</script>
+  <link rel="icon" type="image/png" href="/favicon.png">
+  <link href="css/main.css" rel="stylesheet">
+  <style>
+    html {
+      overflow-y: auto;   /* html/body 双保险:内容超高时必有滚动条 */
+      scrollbar-width: none;      /* Firefox */
+      -ms-overflow-style: none;   /* IE/旧 Edge */
+    }
+
+    /* 隐藏滚动条但保留滚动能力 */
+    html::-webkit-scrollbar,
+    body::-webkit-scrollbar,
+    *::-webkit-scrollbar {
+      display: none;      /* Chrome/Safari/Android WebView */
+      width: 0;
+      height: 0;
+    }
+
+    body {
+      background: #0a0c12;
+      overflow-y: auto;   /* 手机上列表可能超出屏高,允许纵向滚动 */
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    #replay-drop-zone {
+      position: relative;   /* 参与文档流:内容超出屏高时 body 出滚动条,手机不再裁剪
+                                (absolute/fixed 都不参与流,html,body{height:100%} 下溢出不可滚) */
+      min-height: 100vh;   /* dvh 不支持的浏览器用 vh */
+      min-height: 100dvh;  /* 实时反映手机地址栏收起后的真实可视高度 */
+      box-sizing: border-box;
+      padding: 24px 12px;  /* 小屏滚动到头/尾不贴边 */
+      z-index: 9999;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #0a0c12;
+    }
+
+    .rdz-card {
+      background: #1e212e;
+      border: 2px dashed #33374d;
+      border-radius: 12px;
+      padding: 52px 64px;
+      text-align: center;
+      color: #e0e5ec;
+      transition: border-color 0.2s, background 0.2s;
+      max-width: 500px;
+      width: 100%;
+    }
+
+    #replay-drop-zone.drag-over .rdz-card {
+      border-color: #4c6cad;
+      background: #22263a;
+    }
+
+    .rdz-icon {
+      font-size: 52px;
+      color: #4c6cad;
+      margin-bottom: 20px;
+    }
+
+    .rdz-title {
+      font-size: 22px;
+      font-weight: 300;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: #e0e5ec;
+      margin: 0 0 8px;
+    }
+
+    .rdz-subtitle {
+      font-size: 11px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: #4c6cad;
+      margin: 0 0 28px;
+    }
+
+    .rdz-desc {
+      color: #8590a6;
+      font-size: 14px;
+      font-weight: 300;
+      margin-bottom: 28px;
+      line-height: 1.6;
+    }
+
+    .rdz-desc b {
+      color: #a6bff5;
+      font-weight: 600;
+    }
+
+    .rdz-btn {
+      display: inline-block;
+      background: linear-gradient(135deg, #4c6cad, #a6bff5);
+      color: #fff;
+      font-size: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      padding: 11px 28px;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      transition: opacity 0.2s;
+    }
+
+    .rdz-btn:hover {
+      opacity: 0.85;
+    }
+
+    .rdz-btn input[type="file"] {
+      display: none;
+    }
+
+    .rdz-hint {
+      color: #3a3f55;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    /* 游戏画布显式压到最底层:无 z-index 时(auto)在部分 WebView 上
+       会盖住 HUD/拖放区(手机上表现为列表被游戏画面遮挡) */
+    #canvas {
+      z-index: 0;
+    }
+
+    /* 小地图纯展示:不吃点击,避免盖住底部的回放控制条按钮
+       (同 z-index 下 DOM 靠后的 #minimap-hud 会截获控制条右侧按钮的点击) */
+    #minimap-hud {
+      pointer-events: none;
+    }
+
+    #replay-hud {
+      z-index: 5;
+      /* 强制提升为合成层:与 canvas(GPU 层)同为合成层时才严格按 z-index 排序,
+         否则部分手机 WebView 上弹出动画中的操作栏会被 canvas 盖住 */
+      transform: translateZ(0);
+    }
+
+    /* 底部操作栏自动收缩/弹出动画(2s 无操作藏起,触摸唤醒弹出) */
+    #replay-hud.hud-hidden {
+      transform: translateY(calc(100% + 32px));
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    #replay-hud {
+      transition: transform 0.35s ease, opacity 0.35s ease;
+    }
+
+    .replay-zoom-ctrl {
+      color: #8590a6;
+      font-size: 18px;
+    }
+  </style>
+  <script src="/js/vendor/jquery-esm.js"></script>
+    <script src="/js/vendor/perfect-scrollbar.js"></script>
+</head>
+
+<body>
+  <div id="replay-drop-zone">
+    <div class="rdz-card">
+      <div class="rdz-icon"><i class="fal fa-film"></i></div>
+      <h1 class="rdz-title">Astrio</h1>
+      <p class="rdz-subtitle">Replay Viewer</p>
+      <p class="rdz-desc">Drag &amp; drop a <b>.astr.io</b> replay file here,<br>or click the button below to browse.
+      </p><label class="rdz-btn"><i class="fal fa-folder-open"></i>&nbsp; Browse File <input type="file"
+          id="rdz-file-input"></label>
+      <p class="rdz-hint">.astr.io files only</p>
+      <div id="rdz-saved" style="margin-top:18px;text-align:left;">
+        <p class="rdz-hint" style="margin-bottom:6px;">已保存的回放（本机）</p>
+        <div id="rdz-saved-list"
+             style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+      <div id="rdz-server" style="margin-top:14px;text-align:left;">
+        <p class="rdz-hint" style="margin-bottom:6px;">服务器回放<span id="rdz-server-refresh"
+             style="cursor:pointer;color:#4c6cad;margin-left:8px;">⟳ 刷新</span></p>
+        <div id="rdz-server-list"
+             style="max-height:180px;overflow-y:auto;display:flex;flex-direction:column;gap:6px;"></div>
+      </div>
+    </div>
+  </div>
+  <div id="huds">
+    <div id="replay-hud">
+      <div class="replay-timeline-bar"><input type="range" id="replay-timeline" min="0" max="100" value="0" step="0.1">
+      </div>
+      <div class="controller"><span id="replay-play" class="icon" onclick="Recorder.togglePause()"><i
+            class="fal fa-play replay-play"></i></span> <span id="replay-pause" class="icon"
+          onclick="Recorder.togglePause()"><i class="fal fa-pause replay-pause"></i></span> <span id="replay-speed-down"
+          class="icon" onclick="Recorder.setSpeed(Math.max(0.25, Recorder.playbackSpeed / 2))"><i
+            class="fal fa-backward replay-speed-ctrl"></i></span> <span id="replay-speed" class="speed-label">1x</span>
+        <span id="replay-speed-up" class="icon" onclick="Recorder.setSpeed(Math.min(4, Recorder.playbackSpeed * 2))"><i
+            class="fal fa-forward replay-speed-ctrl"></i></span> <span id="replay-zoom-out" class="icon"
+          onclick="Recorder.zoomOut()" title="缩小视野"><i class="fal fa-search-minus replay-zoom-ctrl"></i></span>
+        <span id="replay-zoom-in" class="icon" onclick="Recorder.zoomIn()" title="放大视野"><i
+            class="fal fa-search-plus replay-zoom-ctrl"></i></span> <span id="replay-restart" class="icon"
+          onclick="Recorder.restart()"><i class="fal fa-redo-alt replay-restart"></i></span> <span id="replay-stop"
+          class="icon" onclick="Recorder.stopReplay()"><i class="fal fa-times replay-stop"></i></span></div>
+      <div id="replay-time" class="replay-time">0:00 / 0:00</div>
+    </div>
+    <div id="record-hud"></div>
+    <div id="leaderboard-hud">
+      <div id="leaderboard-head">ASTR.IO</div>
+      <div id="leaderboard-positions"></div>
+    </div>
+    <div id="team-leaderboard-hud">
+      <div id="timer-hud"></div>
+      <div id="team-leaderboard-head">TEAMS</div>
+      <div id="team-leaderboard-positions"></div>
+      <div id="teamlist-head">ALLIES</div>
+      <div id="teamlist-positions"></div>
+      <div id="team-lb-stats"></div>
+    </div>
+    <div id="message-hud">
+      <div id="emojiContainer"></div>
+      <div id="chat-input-row"><span id="chat-scope" class="chat-scope-party">Party</span> <input id="message"
+          placeholder="Enter message..."></div>
+    </div>
+    <div id="chatroom"></div>
+    <div id="stats-hud"><i class="fas fa-lock" aria-hidden="true"></i></div>
+    <div id="targeting-hud">
+      <div>
+        <div class="spectate-mode-btn active" id="spectate-mode-top"><i class="fal fa-video"></i></div>
+        <div class="spectate-mode-btn" id="spectate-mode-mouse"><i class="fal fa-mouse-pointer"></i></div>
+        <div class="spectate-mode-btn" id="spectate-mode-target"><i class="fal fa-expand"></i></div>
+      </div>
+      <div id="targeting-no-1" class="static"><span>FOLLOWING #1 PLAYER</span></div>
+      <div id="targeting-mouse" class="static"><span>FREE ROAM</span></div>
+      <div id="targeting-players">
+        <div class="static"><span>FOLLOWING PLAYERS</span></div>
+        <div id="targeting-player1"><span class="nick">Target 1</span> [ <span class="mass">NOT SELECTED</span>]</div>
+        <div id="targeting-player2"><span class="nick">Target 2</span> [ <span class="mass">NOT SELECTED</span>]</div>
+        <div id="targeting-playersMass"><span>TOTAL MASS</span> [ <span class="mass">0</span>]</div>
+      </div>
+    </div>
+    <div id="time"></div>
+    <div id="minimap-hud">
+      <div class="minimap-grid">
+        <div class="minimap-row">
+          <div class="minimap-sector">A1</div>
+          <div class="minimap-sector">A2</div>
+          <div class="minimap-sector">A3</div>
+          <div class="minimap-sector">A4</div>
+          <div class="minimap-sector">A5</div>
+        </div>
+        <div class="minimap-row">
+          <div class="minimap-sector">B1</div>
+          <div class="minimap-sector">B2</div>
+          <div class="minimap-sector">B3</div>
+          <div class="minimap-sector">B4</div>
+          <div class="minimap-sector">B5</div>
+        </div>
+        <div class="minimap-row">
+          <div class="minimap-sector">C1</div>
+          <div class="minimap-sector">C2</div>
+          <div class="minimap-sector">C3</div>
+          <div class="minimap-sector">C4</div>
+          <div class="minimap-sector">C5</div>
+        </div>
+        <div class="minimap-row">
+          <div class="minimap-sector">D1</div>
+          <div class="minimap-sector">D2</div>
+          <div class="minimap-sector">D3</div>
+          <div class="minimap-sector">D4</div>
+          <div class="minimap-sector">D5</div>
+        </div>
+        <div class="minimap-row">
+          <div class="minimap-sector">E1</div>
+          <div class="minimap-sector">E2</div>
+          <div class="minimap-sector">E3</div>
+          <div class="minimap-sector">E4</div>
+          <div class="minimap-sector">E5</div>
+        </div>
+      </div><canvas id="minimap-nodes"></canvas>
+    </div>
+    <div id="notifications"></div>
+  </div><canvas id="canvas"></canvas>
+  <div class="field" style="display:none"><input type="file"></div>
+  <script src="/js/main.js"></script>
+  <script>(function () {
+      const dropZone = document.getElementById("replay-drop-zone");
+      const fileInput = document.getElementById("rdz-file-input");
+      // 游戏画布显示状态与拖放区联动:
+      // 手机 WebView 的 fixed 合成层不严格按 z-index 排序,canvas 会盖住
+      // 文档流里的拖放区(列表/滚动条下半段)与弹出的操作栏 →
+      // 拖放界面阶段直接不渲染 canvas(display:none),开始回放才显示。
+      const gameCanvas = document.getElementById("canvas");
+      gameCanvas.style.display = "none";
+
+      window._showReplayDropZone = function () {
+        dropZone.style.display = "flex";
+        gameCanvas.style.display = "none";
+      };
+
+      function loadFile(file) {
+        if (!file) return;
+        dropZone.style.display = "none";
+        gameCanvas.style.display = "";
+        Recorder.readFile({ target: { files: [file] } });
+      }
+
+      // ===== 已保存回放列表(IndexedDB,与游戏内 REC 按钮共用存储) =====
+      const DB_NAME = "astrio-replays";
+      const STORE = "files";
+      function openDb() {
+        return new Promise(function (resolve, reject) {
+          var req = indexedDB.open(DB_NAME, 1);
+          req.onupgradeneeded = function () {
+            if (!req.result.objectStoreNames.contains(STORE))
+              req.result.createObjectStore(STORE, { keyPath: "name" });
+          };
+          req.onsuccess = function () { resolve(req.result); };
+          req.onerror = function () { reject(req.error); };
+        });
+      }
+      function listReplays() {
+        return openDb().then(function (db) {
+          return new Promise(function (resolve) {
+            var req = db.transaction(STORE).objectStore(STORE).getAll();
+            req.onsuccess = function () {
+              db.close();
+              resolve((req.result || []).sort(function (a, b) { return b.at - a.at; }));
+            };
+            req.onerror = function () { db.close(); resolve([]); };
+          });
+        }).catch(function () { return []; });
+      }
+      function deleteReplay(name) {
+        return openDb().then(function (db) {
+          var t = db.transaction(STORE, "readwrite");
+          t.objectStore(STORE).delete(name);
+          t.oncomplete = function () { db.close(); };
+        });
+      }
+      function fmtSize(n) {
+        return n > 1048576 ? (n / 1048576).toFixed(1) + " MB"
+             : n > 1024 ? (n / 1024).toFixed(0) + " KB" : n + " B";
+      }
+      async function refreshSavedList() {
+        var listEl = document.getElementById("rdz-saved-list");
+        var box = document.getElementById("rdz-saved");
+        if (!listEl || !box) return;
+        var items = await listReplays();
+        box.style.display = items.length ? "" : "none";
+        listEl.innerHTML = "";
+        items.forEach(function (rec) {
+          var row = document.createElement("div");
+          row.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 10px;"
+            + "background:rgba(255,255,255,.06);border-radius:8px;font-size:12px;";
+          var name = document.createElement("span");
+          name.textContent = rec.name;
+          name.style.cssText = "flex:1;cursor:pointer;text-decoration:underline;";
+          name.title = "点击播放";
+          name.onclick = function () {
+            // Blob → File(readFile 需要 .name 后缀校验)
+            var f = new File([rec.blob], rec.name, { type: rec.blob.type });
+            loadFile(f);
+          };
+          var size = document.createElement("span");
+          size.textContent = fmtSize(rec.size);
+          size.style.cssText = "opacity:.6;white-space:nowrap;";
+          var del = document.createElement("button");
+          del.textContent = "删除";
+          del.style.cssText = "padding:3px 10px;border:0;border-radius:6px;"
+            + "background:#e74c3c;color:#fff;cursor:pointer;font-size:11px;";
+          del.onclick = async function () {
+            await deleteReplay(rec.name);
+            refreshSavedList();
+          };
+          row.appendChild(name); row.appendChild(size); row.appendChild(del);
+          listEl.appendChild(row);
+        });
+      }
+      refreshSavedList();
+
+      function getRemoteReplayUrl() {
+        var params = new URLSearchParams(window.location.search || "");
+        var remote = params.get("remoteReplayUrl");
+        if (!remote) return "";
+        return remote;
+      }
+
+      async function loadRemoteReplayIfProvided() {
+        var remoteUrl = getRemoteReplayUrl();
+        if (!remoteUrl) return;
+        dropZone.style.display = "none";
+        try {
+          var res = await fetch(remoteUrl, { credentials: "omit" });
+          if (!res.ok) {
+            var txt = await res.text();
+            throw new Error(txt || ("HTTP " + res.status));
+          }
+          var blob = await res.blob();
+          var fileName = "private-replay.astr.io";
+          var cd = res.headers.get("content-disposition") || "";
+          var match = /filename=\"?([^\";]+)\"?/i.exec(cd);
+          if (match && match[1]) fileName = match[1];
+
+          var replayFile;
+          try {
+            replayFile = new File([blob], fileName, { type: "application/octet-stream" });
+          } catch (e) {
+            replayFile = blob;
+            replayFile.name = fileName;
+          }
+          loadFile(replayFile);
+        } catch (e) {
+          dropZone.style.display = "flex";
+          if (typeof Notifications !== "undefined" && Notifications.alert) {
+            Notifications.alert("", "Failed to open replay stream");
+          } else {
+            console.error("Failed to open replay stream:", e);
+          }
+        }
+      }
+
+      dropZone.addEventListener("dragover", function (e) {
+        e.preventDefault();
+        dropZone.classList.add("drag-over");
+      });
+      dropZone.addEventListener("dragleave", function () {
+        dropZone.classList.remove("drag-over");
+      });
+      dropZone.addEventListener("drop", function (e) {
+        e.preventDefault();
+        dropZone.classList.remove("drag-over");
+        loadFile(e.dataTransfer.files[0]);
+      });
+      fileInput.addEventListener("change", function (e) {
+        loadFile(e.target.files[0]);
+        e.target.value = "";
+      });
+
+      function serverBase() {
+        try {
+          var bucket = JSON.parse(localStorage.getItem("astrio-settings") || "null");
+          var asia = bucket && bucket.asiaServer;
+          if (asia) return "http://" + (asia.indexOf(":") >= 0 ? asia : asia + ":4002");
+        } catch (e) {}
+        return location.protocol + "//" + location.hostname + ":4002";
+      }
+      // ===== 服务器回放内存缓存(Map,刷新即清,不落盘/不进 IndexedDB) =====
+      var SERVER_REPLAY_CACHE_MAX = 20;
+      var serverReplayCache = new Map();   // name → File
+      function fetchServerReplay(name, onProgress) {
+        if (serverReplayCache.has(name)) {
+          // LRU:命中后挪到最新位置
+          var hit = serverReplayCache.get(name);
+          serverReplayCache.delete(name);
+          serverReplayCache.set(name, hit);
+          return Promise.resolve(hit);
+        }
+        return fetch(remoteUrlPrefix + name, { credentials: "omit" })
+          .then(function (res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            var total = +(res.headers.get("content-length") || 0);
+            // 浏览器不支持流式读取:退化为一次性 blob
+            if (!res.body || !res.body.getReader) {
+              return res.blob().then(function (b) {
+                if (onProgress) onProgress(b.size, b.size);
+                return b;
+              });
+            }
+            var reader = res.body.getReader();
+            var chunks = [];
+            var received = 0;
+            function pump() {
+              return reader.read().then(function (r) {
+                if (r.done) return new Blob(chunks);
+                chunks.push(r.value);
+                received += r.value.length;
+                if (onProgress) onProgress(received, total);
+                return pump();
+              });
+            }
+            return pump();
+          })
+          .then(function (blob) {
+            var f;
+            try {
+              f = new File([blob], name, { type: "application/octet-stream" });
+            } catch (e) {
+              f = blob;
+              f.name = name;
+            }
+            serverReplayCache.set(name, f);
+            // 超上限淘汰最旧的(插入序首个 key)
+            while (serverReplayCache.size > SERVER_REPLAY_CACHE_MAX) {
+              serverReplayCache.delete(serverReplayCache.keys().next().value);
+            }
+            return f;
+          });
+      }
+
+      async function loadServerReplays() {
+        var listEl = document.getElementById("rdz-server-list");
+        if (!listEl) return;
+        listEl.innerHTML = "<div style='opacity:.5;font-size:12px;'>loading...</div>";
+        try {
+          var res = await fetch(serverBase() + "/api/replay/list");
+          var items = await res.json();
+          listEl.innerHTML = "";
+          if (!Array.isArray(items) || !items.length) {
+            listEl.innerHTML = "<div style='opacity:.5;font-size:12px;'>empty</div>";
+            return;
+          }
+          items.forEach(function (it) {
+            var row = document.createElement("div");
+            row.style.cssText = "display:flex;align-items:center;gap:8px;padding:8px 10px;background:rgba(255,255,255,.06);border-radius:8px;font-size:12px;";
+            var name = document.createElement("span");
+            name.textContent = it.name;
+            name.title = "click to play";
+            name.style.cssText = "flex:1;cursor:pointer;text-decoration:underline;position:relative;";
+            name.onclick = function () {
+              // 防重复点击
+              if (row._loading) return;
+              row._loading = true;
+              // 行底进度条层(下载完成/失败后移除)
+              var bar = document.createElement("div");
+              bar.style.cssText = "position:absolute;left:0;top:0;bottom:0;width:0%;"
+                + "background:rgba(76,108,173,.30);pointer-events:none;border-radius:8px;";
+              row.style.position = "relative";
+              row.insertBefore(bar, row.firstChild);
+              var origSize = size.textContent;
+              // fetch(带进度) → File(loadFile/readFile 需要真 File 对象,直接传 URL 字符串会报 Invalid file)
+              fetchServerReplay(it.name, function (done, total) {
+                if (total) {
+                  bar.style.width = Math.floor(done / total * 100) + "%";
+                  size.textContent = Math.floor(done / total * 100) + "%";
+                } else {
+                  size.textContent = fmtSize(done);
+                }
+              }).then(function (f) {
+                bar.remove();
+                size.textContent = origSize;
+                row._loading = false;
+                loadFile(f);
+              }).catch(function (e) {
+                bar.remove();
+                size.textContent = origSize;
+                row._loading = false;
+                if (typeof Notifications !== "undefined" && Notifications.alert) {
+                  Notifications.alert("", "Failed to load replay");
+                } else {
+                  console.error("Failed to load replay:", e);
+                }
+              });
+            };
+            var size = document.createElement("span");
+            size.textContent = fmtSize(it.size);
+            size.style.cssText = "opacity:.6;white-space:nowrap;position:relative;";
+            var dl = document.createElement("a");
+            dl.textContent = "DL";
+            dl.href = remoteUrlPrefix + it.name;
+            dl.download = it.name;
+            dl.style.cssText = "padding:3px 10px;border-radius:6px;background:#4c6cad;color:#fff;cursor:pointer;font-size:11px;text-decoration:none;position:relative;";
+            row.appendChild(name); row.appendChild(size); row.appendChild(dl);
+            listEl.appendChild(row);
+          });
+        } catch (e) {
+          listEl.innerHTML = "<div style='color:#e74c3c;font-size:12px;'>unreachable</div>";
+        }
+      }
+      var remoteUrlPrefix = serverBase() + "/api/replay/download/";
+      var refreshBtn = document.getElementById("rdz-server-refresh");
+      if (refreshBtn) refreshBtn.onclick = loadServerReplays;
+      loadServerReplays();
+
+      
+if (document.readyState === "complete") {
+        setTimeout(loadRemoteReplayIfProvided, 0);
+      } else {
+        window.addEventListener("load", function () {
+          loadRemoteReplayIfProvided();
+        }, { once: true });
+      }
+    })();</script>
+</body>
+
+</html>

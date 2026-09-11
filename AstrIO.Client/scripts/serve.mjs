@@ -1,13 +1,17 @@
-// serve.mjs — 本地运行重写版客户端:
-//   原站静态资源(play.html 等)+ 拦截混淆 bundle → 重写 ESM 入口
-//   npm start  →  http://localhost:8123/play.html
+// serve.mjs — 静态站点服务器（标准 html 项目结构,游戏页即首页）:
+//   src/index.html     = 游戏客户端（原 play.html,首页）
+//   src/home.html      = 原营销落地页（/home）
+//   src/js/            = 客户端 ESM 模块（纯静态,无构建）
+//   src/js/vendor/     = jquery / seedrandom 本地副本
+//   npm start  →  http://<内网IP>:8123/  (监听 0.0.0.0,全内网可访问)
 import http from 'node:http';
 import { readFileSync, existsSync, statSync } from 'node:fs';
 import { join, extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const SITE = join(ROOT, 'site', 'www.astrio.io');
+// 站点根 = src/（标准 html 结构:index.html + js/ + css/ + resources/）
+const SITE = join(ROOT, 'src');
 const PORT = Number(process.env.PORT || 8123);
 
 // === WebSocket 地址使用原版 ===
@@ -94,39 +98,15 @@ const server = http.createServer((req, res) => {
       });
       return;
     }
-    // 1) 重写工程资源;/src/ 模块的裸说明符改写为绝对路径(无需 importmap,绕开 CSP)
-    if (raw.startsWith('/src/')) {
-      const f = join(ROOT, raw);
-      if (!existsSync(f)) return send(res, 404, 'text/plain', 'not found: ' + raw);
-      let js = readFileSync(f, 'utf8');
-      js = js.replaceAll("'jquery'", "'/vendor/jquery-esm.js'")
-        .replaceAll('"jquery"', '"/vendor/jquery-esm.js"')
-        .replaceAll("'seedrandom'", "'/vendor/seedrandom-esm.js'")
-        .replaceAll('"seedrandom"', '"/vendor/seedrandom-esm.js"');
-      return send(res, 200, MIME['.js'], js);
-    }
-    if (raw.startsWith('/vendor/')) {
-      const f = join(ROOT, raw);
-      if (existsSync(f)) return send(res, 200, MIME[extname(f)] || 'text/plain', readFileSync(f));
-      return send(res, 404, 'text/plain', 'not found: ' + raw);
-    }
-    // 2) 混淆 bundle → 加载器
-    if (raw.startsWith('/js/bundle.js')) {
-      return send(res, 200, MIME['.js'], readFileSync(here('../public/bundle-loader.js')));
-    }
-    // 3) 原 Codec.js(全局自加载)→ 空桩(重写版自带 Codec)
-    if (raw.startsWith('/js/connection/astrio/Codec.js')) {
-      return send(res, 200, MIME['.js'], '/* replaced by rewrite: src/net/Codec.js */');
-    }
-    // 4) codec.wasm → 内嵌副本
-    if (raw === '/js/connection/astrio/codec.wasm') {
-      return send(res, 200, MIME['.wasm'], readFileSync(join(ROOT, 'wasm', 'codec.wasm')));
-    }
-
-    // 5) 原站文件;HTML 做改写(绝对 URL → 本地 + 保持拦截路径)
-    // 线上路由:/ = 落地页(index.html),/play = 游戏客户端页(镜像 play.html)
-    const routeAliases = { '/': '/index.html', '/play': '/play.html', '/game': '/play.html' };
+    // 1) 静态站点（site/www.astrio.io）—— 纯静态页面 + 本地 js,无构建。
+    //    路由:/ = 游戏客户端(首页),/home = 原落地页;/play 兼容重定向到 /
+    const routeAliases = { '/': '/index.html', '/home': '/home.html', '/index': '/index.html', '/game': '/index.html', '/privacy': '/privacy.html', '/terms': '/terms.html', '/bracket': '/bracket.html' };
     const raw0 = routeAliases[raw] || raw;
+    if (raw === '/play' || raw === '/play.html' || raw === '/game') {
+      res.writeHead(308, { Location: '/' });
+      res.end();
+      return;
+    }
     const localN = join(SITE, raw0);
     const local = join(SITE, raw0.replaceAll('/', '\\'));
     const file = existsSync(localN) && statSync(localN).isFile() ? localN : (existsSync(local) && statSync(local).isFile() ? local : null);
@@ -136,11 +116,7 @@ const server = http.createServer((req, res) => {
     }
     if (file.endsWith('.html')) {
       let html = readFileSync(file, 'utf8');
-      html = html.replaceAll('https://www.astrio.io/', '/');
-      html = html.replaceAll('https://astrio.io/', '/');
-      // 静态化资源版本参数 → 镜像文件名(main.css?v=96353 → main.css@v=96353.css 等)
-      html = html.replace(/(css\/|js\/)([\w.\-]+?\.(?:css|js))\?v=(\d+)/g, '$1$2@v=$3');
-      // 本地运行:移除 CSP meta(它拦截注入的模块脚本;CSP 属于原站线上策略)
+      // 本地运行:移除 CSP meta(它拦截内联引导脚本;CSP 属于原站线上策略)
       html = html.replace(/<meta http-equiv="Content-Security-Policy"[^>]*>\s*/gi, '');
       // WebSocket 地址使用原版:浏览器直连 wss://www.astrio.io(带真实指纹/Cookie,401 免疫);
       // 设 ASTRIO_LOCAL_WS=1 可切回原版 localhost 端口表行为
@@ -161,8 +137,8 @@ const server = http.createServer((req, res) => {
   }
 });
 
-server.listen(PORT, () => {
-  console.log(`astrio rewrite — http://localhost:${PORT}/play.html`);
+server.listen(PORT, '0.0.0.0', () => {
+  console.log(`astrio rewrite — http://0.0.0.0:${PORT}/  (game = index.html, landing = /home)`);
   console.log(`site: ${SITE}`);
   console.log('ws: browser → wss://astrio.io directly (proxy removed)');
 });
