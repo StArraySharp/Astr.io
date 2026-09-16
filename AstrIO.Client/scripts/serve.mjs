@@ -138,7 +138,7 @@ const server = http.createServer((req, res) => {
 });
 
 server.listen(PORT, '0.0.0.0', () => {
-  console.log(`astrio rewrite — http://0.0.0.0:${PORT}/  (game = index.html, landing = /home)`);
+  console.log(`astrio rewrite — http://localhost:${PORT}/  (game = index.html, landing = /home)`);
   console.log(`site: ${SITE}`);
   console.log('ws: browser → wss://astrio.io directly (proxy removed)');
 });

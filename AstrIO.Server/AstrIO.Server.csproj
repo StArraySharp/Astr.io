@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk.Web">
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
     <TargetFramework>net10.0</TargetFramework>
@@ -7,6 +7,11 @@
     <RootNamespace>AstrIO.Server</RootNamespace>
     <AssemblyName>AstrIO.Server</AssemblyName>
     <InvariantGlobalization>true</InvariantGlobalization>
+    <!-- AOT：与 JIT 并存，仅 publish 时生效；匿名对象 JSON 已全部改为 source-gen DTO -->
+    <PublishAot Condition="'$(PublishAot)'==''">true</PublishAot>
+    <IsAotCompatible>true</IsAotCompatible>
+    <InvariantTimezone>true</InvariantTimezone>
+    <JsonSerializerIsReflectionEnabledByDefault>false</JsonSerializerIsReflectionEnabledByDefault>
   </PropertyGroup>
 
   <!-- Web 控制面板:构建时复制到输出目录(panel.html 从 ContentRoot 读取) -->

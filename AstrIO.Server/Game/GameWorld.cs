@@ -1,4 +1,4 @@
-namespace AstrIO.Server.Game;
+﻿namespace AstrIO.Server.Game;
 
 /// <summary>bot AI 难度档位（对应 Nebulous.io DifficultyEnum:Easy/Medium/Hard/Impossible）。</summary>
 public enum BotDifficulty { Easy = 0, Medium = 1, Hard = 2, Impossible = 3 }
@@ -36,7 +36,7 @@ public sealed record BotParams(
 public sealed class GameWorld
 {
     // ---- 常量（MultiOgar config，与 world.js 一致）----
-    public const float BorderMin = 0f, BorderMax = 14142f;
+    public const float BorderMin = 0f, BorderMax = 28284f;   // 地图边长 x2(原 14142);坐标走 U16 上限 65535,安全
     public const float VirusMinSize = 100f, VirusMaxSize = 140f;
     public const int FoodTarget = 1000, FoodSpawnPerTick = 30, FoodSpawnInterval = 2;
     public const float FoodMinSize = 10f, FoodMaxSize = 20f;
@@ -51,6 +51,31 @@ public sealed class GameWorld
     public static float DecayScale { get; set; } = 0.3f;
     /// <summary>吐球射程/速度（原版 780,当前默认 1400 加速;config.json ejectDistance 可调）。</summary>
     public static float EjectDistance { get; set; } = 1400f;
+
+    // ---- 视野裁剪(对齐 Ogar/MultiOgar updateView)----
+    /// <summary>基础视野半径(世界单位;config.json viewBaseRadius 可调)。视野半径 = 基础 + sqrt(总质量)*系数 + 分片加成。</summary>
+    public static float ViewBaseRadius { get; set; } = 1000f;
+    /// <summary>质量视野系数：sqrt(总质量) * 该值(原版 Ogar 约 4~6;越大 = 越肥看得越远)。</summary>
+    public static float ViewMassFactor { get; set; } = 4f;
+    /// <summary>每个额外分片(超出第 1 片)的视野加成(世界单位)，体现"分身越多视野越大"。</summary>
+    public static float ViewCellBonus { get; set; } = 60f;
+    /// <summary>视野半径上限(防止极端质量下视野铺满全图)。</summary>
+    public static float ViewMaxRadius { get; set; } = 6000f;
+    /// <summary>视野裁剪总开关(config.json viewCulling)。关 = 全图同步(旧行为)。</summary>
+    public static bool ViewCulling { get; set; } = true;
+
+    /// <summary>
+    /// 计算某个玩家的视野半径(Ogar updateView 等效)：
+    ///   radius = ViewBaseRadius + sqrt(总质量) * ViewMassFactor + (分片数 - 1) * ViewCellBonus
+    /// 并夹取到 ViewMaxRadius。
+    /// </summary>
+    public static float CalcViewRadius(float massTotal, int cellCount)
+    {
+        var r = ViewBaseRadius;
+        if (massTotal > 0f) r += MathF.Sqrt(massTotal) * ViewMassFactor;
+        if (cellCount > 1) r += (cellCount - 1) * ViewCellBonus;
+        return MathF.Min(r, ViewMaxRadius);
+    }
     public const int EjectCooldown = 1;              // 官方实测 40ms/发（每 tick 可吐）
     public const float MergeBaseSec = 30f;
     public const float MergePerMassSec = 0.0233f;
@@ -95,6 +120,18 @@ public sealed class GameWorld
     public int Tick { get; private set; }
     public float SpawnMass { get; set; } = 500f;
 
+    // ---- 霸屏保底(Anti-Dominance)：单玩家占比过高 → 5s 后清场 ----
+    /// <summary>倒计时起点 tick(-1 = 未激活)。</summary>
+    public int DominanceArmedTick { get; private set; } = -1;
+    /// <summary>清场冷却截止 tick。</summary>
+    public int DominanceCooldownUntil { get; private set; }
+    /// <summary>最近一次霸屏者昵称(空 = 无)。</summary>
+    public string DominanceNick { get; private set; } = "";
+    /// <summary>最近一次霸屏占比(0~1)。</summary>
+    public float DominanceRatio { get; private set; }
+    /// <summary>累计清场次数。</summary>
+    public int DominanceWipes { get; private set; }
+
     // ---- 可实时调整的参数（Web 控制面板写入;SaveConfig/LoadConfig 持久化到 config.json）----
     /// <summary>bot 数量上限（SetBots 实时增减）。</summary>
     public int BotCount { get; set; } = 100;
@@ -120,21 +157,28 @@ public sealed class GameWorld
     /// <summary>保存当前可调参数到 config.json。</summary>
     public void SaveConfig()
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(new
+        // ★ AOT：用强类型 ConfigDto + source-gen 上下文，禁止匿名对象反射序列化
+        var dto = new ConfigDto
         {
-            spawnMass = SpawnMass,
-            bots = BotCount,
-            viruses = VirusTarget,
-            autoSplitMass = AutoSplitMass,
-            botDifficulty = BotDifficulty.ToString().ToLowerInvariant(),
-            decayScale = DecayScale,
-            ejectSize = EjectSize,
-            ejectSizeLoss = EjectSizeLoss,
-            ejectDistance = EjectDistance,
-            autoSplitEnabled = AutoSplitEnabled,
-            subSpawnEnabled = SubSpawnEnabled,
-            panelPasswordHash = PanelPasswordHash,
-        }, new System.Text.Json.JsonSerializerOptions { WriteIndented = true });
+            SpawnMass = SpawnMass,
+            Bots = BotCount,
+            Viruses = VirusTarget,
+            AutoSplitMass = AutoSplitMass,
+            BotDifficulty = BotDifficulty.ToString().ToLowerInvariant(),
+            DecayScale = DecayScale,
+            EjectSize = EjectSize,
+            EjectSizeLoss = EjectSizeLoss,
+            EjectDistance = EjectDistance,
+            ViewBaseRadius = ViewBaseRadius,
+            ViewMassFactor = ViewMassFactor,
+            ViewCellBonus = ViewCellBonus,
+            ViewMaxRadius = ViewMaxRadius,
+            ViewCulling = ViewCulling,
+            AutoSplitEnabled = AutoSplitEnabled,
+            SubSpawnEnabled = SubSpawnEnabled,
+            PanelPasswordHash = PanelPasswordHash,
+        };
+        var json = System.Text.Json.JsonSerializer.Serialize(dto, ConfigJsonContext.Default.ConfigDto);
         File.WriteAllText(ConfigPath, json);
     }
 
@@ -160,6 +204,11 @@ public sealed class GameWorld
             if (root.TryGetProperty("ejectSize", out var es)) EjectSize = Math.Clamp(es.GetSingle(), 10f, 100f);
             if (root.TryGetProperty("ejectSizeLoss", out var esl)) EjectSizeLoss = Math.Clamp(esl.GetSingle(), 10f, 100f);
             if (root.TryGetProperty("ejectDistance", out var ed)) EjectDistance = Math.Clamp(ed.GetSingle(), 200f, 5000f);
+            if (root.TryGetProperty("viewBaseRadius", out var vbr)) ViewBaseRadius = Math.Clamp(vbr.GetSingle(), 200f, 20000f);
+            if (root.TryGetProperty("viewMassFactor", out var vmf)) ViewMassFactor = Math.Clamp(vmf.GetSingle(), 0f, 50f);
+            if (root.TryGetProperty("viewCellBonus", out var vcb)) ViewCellBonus = Math.Clamp(vcb.GetSingle(), 0f, 2000f);
+            if (root.TryGetProperty("viewMaxRadius", out var vmr)) ViewMaxRadius = Math.Clamp(vmr.GetSingle(), 200f, 40000f);
+            if (root.TryGetProperty("viewCulling", out var vc)) ViewCulling = vc.GetBoolean();
             if (root.TryGetProperty("autoSplitEnabled", out var ase)) AutoSplitEnabled = ase.GetBoolean();
             if (root.TryGetProperty("subSpawnEnabled", out var sse)) SubSpawnEnabled = sse.GetBoolean();
             // 面板密码哈希（空 / 非十六进制 = 未设置 → 首次访问面板时要求设置密码）
@@ -883,6 +932,59 @@ public sealed class GameWorld
 
         // 9) 细胞年龄推进
         foreach (var c in Cells.Values.ToList()) c.Age = Tick - c.BirthTick;
+
+        // 10) 霸屏保底：单玩家质量占比 ≥ 80% → 5 秒后清场(全场重生)
+        CheckDominance();
+    }
+
+    /// <summary>
+    /// 霸屏检测 + 倒计时 + 清场。调用方须持 <c>WorldLock</c>(由 StepCore 保证)。
+    /// <para>判定/倒计时逻辑在 <see cref="AntiDominance.Evaluate"/>；此处只做状态落地与清场执行。</para>
+    /// </summary>
+    void CheckDominance()
+    {
+        var armed = DominanceArmedTick;
+        var cooldown = DominanceCooldownUntil;
+
+        var verdict = AntiDominance.Evaluate(
+            Players.Values, Tick, ref armed, ref cooldown);
+
+        DominanceArmedTick = armed;
+        DominanceCooldownUntil = cooldown;
+
+        if (verdict.DominatorNick.Length > 0)
+        {
+            DominanceNick = verdict.DominatorNick;
+            DominanceRatio = verdict.Ratio;
+        }
+
+        if (!verdict.Triggered) return;
+
+        DominanceWipes++;
+        ClearAllPlayers($"anti-dominance: {DominanceNick} held {DominanceRatio:P0}");
+    }
+
+    /// <summary>
+    /// 清场：把全场玩家(含 bot)的细胞全部移除并触发重生。
+    /// <para>真人保留 Player 对象(由 Session 继续驱动)，仅清空细胞 → 客户端自己重发生出包；
+    /// bot 直接重新 Spawn 回场上。</para>
+    /// </summary>
+    void ClearAllPlayers(string reason)
+    {
+        foreach (var p in Players.Values.ToList())
+        {
+            foreach (var c in p.Cells.ToList())
+            {
+                Cells.Remove(c.Id);
+                RemovedIds.Add(c.Id);   // 50 号 removed 段：客户端同步清掉残球
+            }
+            p.Cells.Clear();
+            p.PendingSplits = 0;
+            p.ActiveTab = 1;
+
+            // bot 立即重生(保持数量)；真人留空等客户端重生包
+            if (p.IsBot) Spawn(p);
+        }
     }
 
     /// <summary>扫掠吞嘤断片：dir=-1 向左（索引递减），dir=+1 向右（索引递增）。</summary>
@@ -1918,77 +2020,133 @@ public sealed class GameWorld
     /// bot AI 诊断快照（自动化测试/调试用）：状态机档位、威胁/猎物来源、分组、位置。
     /// 位置是关键 —— 只看 mass/cells 看不出“呆”（站着不动质量照样涨）。
     /// </summary>
-    public List<object> ListBotAi()
+public List<BotAiRowDto> ListBotAi()
+
+{
+
+    var list = new List<BotAiRowDto>();
+
+    foreach (var b in Bots)
+
     {
-        var list = new List<object>();
-        foreach (var b in Bots)
+
+        if (b.Cells.Count == 0)
+
         {
-            if (b.Cells.Count == 0)
-            {
-                list.Add(new { nick = b.Nick, alive = false });
-                continue;
-            }
-            float cx = 0, cy = 0, maxR = 0, m1 = 0, m2 = 0;
-            int n1 = 0, n2 = 0;
-            foreach (var c in b.Cells)
-            {
-                cx += c.X; cy += c.Y;
-                if (c.R > maxR) maxR = c.R;
-                if (c.Tab == 2) { n2++; m2 += c.Mass; } else { n1++; m1 += c.Mass; }
-            }
-            cx /= b.Cells.Count; cy /= b.Cells.Count;
-            var th = ById(b.ThreatId);
-            var pr = ById(b.HuntId);
-            list.Add(new
-            {
-                nick = b.Nick,
-                alive = true,
-                mass = (int)b.MassTotal,
-                cells = b.Cells.Count,
-                tab1 = n1,
-                tab2 = n2,
-                mass1 = (int)m1,
-                mass2 = (int)m2,
-                state = b.AiState,
-                stateTicks = b.StateTicks,
-                farming = b.FarmUntilTick > Tick,
-                x = (int)cx,
-                y = (int)cy,
-                maxR = (int)maxR,
-                threat = th?.Owner?.Nick,
-                threatIsBot = th?.Owner?.IsBot,
-                threatD = b.ThreatD2 < float.MaxValue ? (int)MathF.Sqrt(b.ThreatD2) : -1,
-                prey = pr?.Owner?.Nick,
-                huntD = b.HuntD2 < float.MaxValue ? (int)MathF.Sqrt(b.HuntD2) : -1,
-                difficulty = b.Difficulty.ToString(),
-            });
+
+            list.Add(new BotAiRowDto(b.Nick, Alive: false));
+
+            continue;
+
         }
-        return list;
+
+        float cx = 0, cy = 0, maxR = 0, m1 = 0, m2 = 0;
+
+        int n1 = 0, n2 = 0;
+
+        foreach (var c in b.Cells)
+
+        {
+
+            cx += c.X; cy += c.Y;
+
+            if (c.R > maxR) maxR = c.R;
+
+            if (c.Tab == 2) { n2++; m2 += c.Mass; } else { n1++; m1 += c.Mass; }
+
+        }
+
+        cx /= b.Cells.Count; cy /= b.Cells.Count;
+
+        var th = ById(b.ThreatId);
+
+        var pr = ById(b.HuntId);
+
+        list.Add(new BotAiRowDto(
+
+            Nick: b.Nick,
+
+            Alive: true,
+
+            Mass: (int)b.MassTotal,
+
+            Cells: b.Cells.Count,
+
+            Tab1: n1,
+
+            Tab2: n2,
+
+            Mass1: (int)m1,
+
+            Mass2: (int)m2,
+
+            State: b.AiState,
+
+            StateTicks: b.StateTicks,
+
+            Farming: b.FarmUntilTick > Tick,
+
+            X: (int)cx,
+
+            Y: (int)cy,
+
+            MaxR: (int)maxR,
+
+            Threat: th?.Owner?.Nick,
+
+            ThreatIsBot: th?.Owner?.IsBot,
+
+            ThreatD: b.ThreatD2 < float.MaxValue ? (int)MathF.Sqrt(b.ThreatD2) : -1,
+
+            Prey: pr?.Owner?.Nick,
+
+            HuntD: b.HuntD2 < float.MaxValue ? (int)MathF.Sqrt(b.HuntD2) : -1,
+
+            Difficulty: b.Difficulty.ToString()));
+
     }
 
-    public List<object> ListPlayers()
+    return list;
+
+}
+
+public List<PlayerRowDto> ListPlayers()
+
+{
+
+    var list = new List<PlayerRowDto>();
+
+    foreach (var p in Players.Values)
+
     {
-        var list = new List<object>();
-        foreach (var p in Players.Values)
-        {
-            if (p.Cells.Count == 0 && !p.IsBot) continue;   // 空真人（断线残留）跳过
-            list.Add(new
-            {
-                id = p.Id,
-                nick = p.Nick,
-                isBot = p.IsBot,
-                mass = (int)p.MassTotal,
-                cells = p.Cells.Count,
-                alive = p.Cells.Count > 0,
-                x = p.Cells.Count > 0 ? (int)(p.Cells.Sum(c => c.X) / p.Cells.Count) : 0,
-                y = p.Cells.Count > 0 ? (int)(p.Cells.Sum(c => c.Y) / p.Cells.Count) : 0,
-            });
-        }
-        // 按质量降序:排行榜即玩家列表本身
-        return list
-            .OrderByDescending(o => (int)o.GetType().GetProperty("mass")!.GetValue(o)!)
-            .ToList();
+
+        if (p.Cells.Count == 0 && !p.IsBot) continue;   // 空真人(断线残留)跳过
+
+        list.Add(new PlayerRowDto(
+
+            Id: p.Id,
+
+            Nick: p.Nick,
+
+            IsBot: p.IsBot,
+
+            Mass: (int)p.MassTotal,
+
+            Cells: p.Cells.Count,
+
+            Alive: p.Cells.Count > 0,
+
+            X: p.Cells.Count > 0 ? (int)(p.Cells.Sum(c => c.X) / p.Cells.Count) : 0,
+
+            Y: p.Cells.Count > 0 ? (int)(p.Cells.Sum(c => c.Y) / p.Cells.Count) : 0));
+
     }
+
+    // 按质量降序:排行榜即玩家列表本身 (AOT: 反射 GetProperty 已移除)
+
+    return list.OrderByDescending(o => o.Mass).ToList();
+
+}
 }
 
 /// <summary>全局世界锁：连接层投递输入时与主循环互斥（旧 WorldLockExt 语义，并入此类避免散文件）。</summary>

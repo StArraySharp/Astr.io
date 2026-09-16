@@ -155,7 +155,33 @@ public sealed class GameLoop
     }
 
     /// <summary>
-    /// 50 号全量世界帧：added=全部细胞,updated/eaten/removed 空。
+    /// 计算会话视野(中心=自己全部细胞质心;半径=GameWorld.CalcViewRadius 质量/分片自适应)。
+    /// 返回 false 表示当前无自己细胞(观战/死亡) → 调用方退回全图同步。
+    /// </summary>
+    bool TryGetView(Session session, out float cx, out float cy, out float radius)
+    {
+        cx = cy = 0f; radius = 0f;
+        var mine = session.Player.Cells;
+        if (mine.Count == 0) return false;
+        float sx = 0, sy = 0;
+        foreach (var c in mine) { sx += c.X; sy += c.Y; }
+        cx = sx / mine.Count;
+        cy = sy / mine.Count;
+        radius = GameWorld.CalcViewRadius(session.Player.MassTotal, mine.Count);
+        return true;
+    }
+
+    /// <summary>细胞是否落在视野内(圆心距 &lt;= 视野半径 + 细胞半径;食物/病毒/孢子同样受裁剪)。</summary>
+    static bool InView(Cell c, float cx, float cy, float radius)
+    {
+        var dx = c.X - cx;
+        var dy = c.Y - cy;
+        var reach = radius + c.R;
+        return dx * dx + dy * dy <= reach * reach;
+    }
+
+    /// <summary>
+    /// 50 号全量世界帧：added=可见细胞,updated/eaten/removed 空。
     /// flags:1 病毒 / 2 孢子 / 4 食物 / 8 颜色 / 16 昵称 / 64 自己 / 256 页签。
     /// </summary>
     byte[] EncodeWorldFull(Session session)
@@ -163,8 +189,19 @@ public sealed class GameLoop
         var w = new BinWriter();
         w.U8(Op.WorldUpdate);
         var mine = session.Player.Cells;
-        w.U16((ushort)Math.Min(_world.Cells.Count, ushort.MaxValue));
-        foreach (var c in _world.Cells.Values) WriteCell(w, c, mine);
+
+        var cull = false;
+        float cx = 0f, cy = 0f, radius = 0f;
+        if (GameWorld.ViewCulling) cull = TryGetView(session, out cx, out cy, out radius);
+        var visible = new List<Cell>(_world.Cells.Count);
+        foreach (var c in _world.Cells.Values)
+        {
+            // 自己的细胞永远可见(视野中心由它们算出,极端情况下半径也该覆盖)
+            if (!cull || mine.Contains(c) || InView(c, cx, cy, radius)) visible.Add(c);
+        }
+
+        w.U16((ushort)Math.Min(visible.Count, ushort.MaxValue));
+        foreach (var c in visible) WriteCell(w, c, mine);
         w.U16(0);   // updated
         w.U16(0);   // eaten
         w.U16(0);   // removed
@@ -183,10 +220,23 @@ public sealed class GameLoop
         var mine = session.Player.Cells;
         var seen = session.Seen;
 
+        // 视野裁剪:无自己细胞(观战/死亡)时退回全图同步(不裁剪)
+        var cull = false;
+        float cx = 0f, cy = 0f, radius = 0f;
+        if (GameWorld.ViewCulling) cull = TryGetView(session, out cx, out cy, out radius);
+
         var added = new List<Cell>();
         var updated = new List<Cell>();
+        // 本会话专属"离开视野"列表(不能写 _world.RemovedIds -- 那是全服共享的)
+        List<uint>? outOfView = null;
         foreach (var c in _world.Cells.Values)
         {
+            var visible = !cull || mine.Contains(c) || InView(c, cx, cy, radius);
+            if (!visible)
+            {
+                if (seen.Contains(c.Id)) (outOfView ??= new List<uint>()).Add(c.Id);
+                continue;
+            }
             if (seen.Contains(c.Id))
             {
                 if (!c.IsFood) updated.Add(c);   // 食物静止不更新
@@ -218,12 +268,16 @@ public sealed class GameLoop
         // removed：击杀/管理移除（KillPlayer/SetBots/SetViruses）的细胞 id,
         // 客户端据此同步清掉场上残球
         var removed = _world.RemovedIds;
-        w.U16((ushort)removed.Count);
+        var outCount = outOfView?.Count ?? 0;
+        w.U16((ushort)(removed.Count + outCount));
         foreach (var id in removed) w.U32(id);
+        if (outOfView != null)
+            foreach (var id in outOfView) w.U32(id);
 
-        // seen 维护：先删后加（避免 add 后又被 eat 的边界）
+        // seen 维护：先删后加(避免 add 后又被 eat 的边界)
         foreach (var (victim, _) in eaten) seen.Remove(victim.Id);
         foreach (var id in removed) seen.Remove(id);
+        if (outOfView != null) foreach (var id in outOfView) seen.Remove(id);
         foreach (var c in added) seen.Add(c.Id);
         return w.ToArray();
     }

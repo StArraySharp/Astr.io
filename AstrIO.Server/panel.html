@@ -139,7 +139,7 @@
       <h1>AstrIO Server</h1>
       <div class="sub">Material You 控制面板 · <b id="tick">-</b> tick · 所有修改实时生效</div>
     </div>
-    <a href="http://localhost:8123/play.html" target="_blank"><button>打开游戏 ↗</button></a>
+    <a href="http://localhost:8123/" target="_blank"><button>打开游戏 ↗</button></a>
   </div>
 
   <div class="grid">
@@ -241,6 +241,58 @@
   </section>
 
   <section>
+    <h2>视野裁剪</h2>
+    <div class="row">
+      <label>总开关 culling</label>
+      <input type="checkbox" id="in-viewculling" checked
+             onchange="post({viewCulling: $('in-viewculling').checked})">
+      <span style="font-size:12px;opacity:.7">关 = 全图同步(旧行为)</span>
+    </div>
+    <div class="row">
+      <label>基础视野半径</label>
+      <input type="number" id="in-viewbase" min="200" max="20000" step="50" value="1000">
+      <button onclick="post({viewBaseRadius: +$('in-viewbase').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({viewBaseRadius:500})">500</button>
+        <button onclick="post({viewBaseRadius:1000})">1000</button>
+        <button onclick="post({viewBaseRadius:2000})">2000</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>质量系数 ×√mass</label>
+      <input type="number" id="in-viewmass" min="0" max="50" step="0.5" value="4">
+      <button onclick="post({viewMassFactor: +$('in-viewmass').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({viewMassFactor:0})">无视质量</button>
+        <button onclick="post({viewMassFactor:4})">4</button>
+        <button onclick="post({viewMassFactor:8})">8</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>分片加成/个</label>
+      <input type="number" id="in-viewcell" min="0" max="2000" step="10" value="60">
+      <button onclick="post({viewCellBonus: +$('in-viewcell').value})">应用</button>
+      <div class="quick">
+        <button onclick="post({viewCellBonus:0})">无加成</button>
+        <button onclick="post({viewCellBonus:60})">60</button>
+        <button onclick="post({viewCellBonus:150})">150</button>
+      </div>
+    </div>
+    <div class="row">
+      <label>视野上限</label>
+      <input type="number" id="in-viewmax" min="200" max="40000" step="200" value="6000">
+      <button onclick="post({viewMaxRadius: +$('in-viewmax').value})">应用</button>
+    </div>
+    <div class="row">
+      <label>预设</label>
+      <div class="quick">
+        <button onclick="post({viewCulling:true,viewBaseRadius:1000,viewMassFactor:4,viewCellBonus:60,viewMaxRadius:6000})">原版观感</button>
+        <button onclick="post({viewCulling:true,viewBaseRadius:600,viewMassFactor:2,viewCellBonus:30,viewMaxRadius:3000})">迷雾紧凑</button>
+        <button onclick="post({viewCulling:false})">关闭裁剪</button>
+      </div>
+    </div>
+  </section>
+  <section>
     <h2>吐球 / 孢子</h2>
     <div class="row">
       <label>吐球射程/速度</label>
@@ -332,6 +384,11 @@ async function refresh() {
     if (document.activeElement !== $('in-ejectdist')) $('in-ejectdist').value = s.ejectDistance;
     if (document.activeElement !== $('in-ejectsize')) $('in-ejectsize').value = s.ejectSize;
     if (document.activeElement !== $('in-ejectloss')) $('in-ejectloss').value = s.ejectSizeLoss;
+    if (document.activeElement !== $('in-viewculling')) $('in-viewculling').checked = !!s.viewCulling;
+    if (document.activeElement !== $('in-viewbase')) $('in-viewbase').value = s.viewBaseRadius;
+    if (document.activeElement !== $('in-viewmass')) $('in-viewmass').value = s.viewMassFactor;
+    if (document.activeElement !== $('in-viewcell')) $('in-viewcell').value = s.viewCellBonus;
+    if (document.activeElement !== $('in-viewmax')) $('in-viewmax').value = s.viewMaxRadius;
     if (document.activeElement !== $('in-autosplit')) $('in-autosplit').checked = !!s.autoSplitEnabled;
     if (document.activeElement !== $('in-subspawn')) $('in-subspawn').checked = !!s.subSpawnEnabled;
     renderPlayers();

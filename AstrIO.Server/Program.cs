@@ -60,7 +60,7 @@ app.Use(async (ctx, next) =>
     if (path.StartsWith("/api/panel") && !path.StartsWith("/api/panel/auth") && !PanelAuthed(ctx))
     {
         ctx.Response.StatusCode = 401;
-        await ctx.Response.WriteAsJsonAsync(new { error = "unauthorized" });
+        await ctx.Response.WriteAsJsonAsync(new ApiErrorDto("unauthorized"), JsonApiContext.Default.ApiErrorDto);
         return;
     }
     await next();
@@ -72,7 +72,7 @@ app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSecond
 var vanillaRoot = Path.GetFullPath(Path.Combine(app.Environment.ContentRootPath, "..", ".."));
 if (Directory.Exists(vanillaRoot))
 {
-    app.UseDefaultFiles();
+    // app.UseDefaultFiles();  // 根路径已交给控制面板,静态中间件不再抢 /
     app.UseStaticFiles(new StaticFileOptions
     {
         FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(vanillaRoot),
@@ -119,13 +119,13 @@ static async Task WsHandler(HttpContext ctx, string mode)
 
 // ---------- HTTP API（对齐 mock-server httpHandler） ----------
 
-app.MapGet("/api/mass", (GameLoop loop) => Results.Json(new { mass = loop.WorldRef.SpawnMass }));
+app.MapGet("/api/mass", (GameLoop loop) => Results.Json(new MassDto(loop.WorldRef.SpawnMass), JsonApiContext.Default.MassDto));
 app.MapPost("/api/mass", async (HttpContext ctx, GameLoop loop) =>
 {
     using var doc = await System.Text.Json.JsonDocument.ParseAsync(ctx.Request.Body);
     if (doc.RootElement.TryGetProperty("mass", out var m))
         loop.WorldRef.SetSpawnMass(m.GetSingle());
-    return Results.Json(new { mass = loop.WorldRef.SpawnMass });
+    return Results.Json(new MassDto(loop.WorldRef.SpawnMass), JsonApiContext.Default.MassDto);
 });
 app.MapGet("/server-info/{mode}", (string mode, GameLoop loop) =>
 {
@@ -141,7 +141,7 @@ app.MapGet("/server-info/{mode}", (string mode, GameLoop loop) =>
         "domination" or "megasplit" => real,
         _ => bots,
     };
-    return Results.Json(new { players, spectators = 0 });
+    return Results.Json(new ServerInfoDto(players, 0), JsonApiContext.Default.ServerInfoDto);
 })
 .RequireCors("poll");
 
@@ -165,7 +165,7 @@ app.Map("/chat", async (HttpContext ctx) =>
 app.MapGet("/api/panel/auth", (HttpContext ctx, GameLoop loop) =>
 {
     var needSetup = !IsValidHash(loop.WorldRef.PanelPasswordHash);
-    return Results.Json(new { needSetup, authed = !needSetup && PanelAuthed(ctx) });
+    return Results.Json(new PanelAuthDto(needSetup, !needSetup && PanelAuthed(ctx)), JsonApiContext.Default.PanelAuthDto);
 });
 
 /// <summary>登录 / 首次设置密码。请求体 { password }。</summary>
@@ -180,7 +180,7 @@ app.MapPost("/api/panel/auth", async (HttpContext ctx, GameLoop loop) =>
     catch { /* 体不合法 → 当空密码处理 */ }
 
     if (pwd.Length == 0)
-        return Results.Json(new { ok = false, error = "密码不能为空" }, statusCode: 400);
+        return Results.Json(new PanelAuthResult(false, "密码不能为空"), JsonApiContext.Default.PanelAuthResult, statusCode: 400);
 
     var w = loop.WorldRef;
 
@@ -188,11 +188,11 @@ app.MapPost("/api/panel/auth", async (HttpContext ctx, GameLoop loop) =>
     if (!IsValidHash(w.PanelPasswordHash))
     {
         if (pwd.Length < 4)
-            return Results.Json(new { ok = false, error = "密码至少 4 位" }, statusCode: 400);
+            return Results.Json(new PanelAuthResult(false, "密码至少 4 位"), JsonApiContext.Default.PanelAuthResult, statusCode: 400);
         w.PanelPasswordHash = Sha256Hex(pwd);
         w.SaveConfig();
         Grant(ctx);
-        return Results.Json(new { ok = true, setup = true });
+        return Results.Json(new PanelAuthResult(true, Setup: true), JsonApiContext.Default.PanelAuthResult);
     }
 
     // ---- 校验：比 SHA256 十六进制串，固定时间比较防时序侧信道 ----
@@ -200,10 +200,10 @@ app.MapPost("/api/panel/auth", async (HttpContext ctx, GameLoop loop) =>
     var stored = System.Text.Encoding.UTF8.GetBytes(w.PanelPasswordHash.Trim().ToLowerInvariant());
     if (given.Length != stored.Length ||
         !System.Security.Cryptography.CryptographicOperations.FixedTimeEquals(given, stored))
-        return Results.Json(new { ok = false, error = "密码错误" }, statusCode: 401);
+        return Results.Json(new PanelAuthResult(false, "密码错误"), JsonApiContext.Default.PanelAuthResult, statusCode: 401);
 
     Grant(ctx);
-    return Results.Json(new { ok = true });
+    return Results.Json(new PanelAuthResult(true), JsonApiContext.Default.PanelAuthResult);
 });
 
 /// <summary>登出（丢弃 token + 清 Cookie）。</summary>
@@ -211,16 +211,17 @@ app.MapPost("/api/panel/logout", (HttpContext ctx) =>
 {
     if (ctx.Request.Cookies.TryGetValue("panel_auth", out var t) && t != null) panelTokens.Remove(t);
     ctx.Response.Cookies.Delete("panel_auth", new CookieOptions { Path = "/" });
-    return Results.Json(new { ok = true });
+    return Results.Json(new OkDto(true), JsonApiContext.Default.OkDto);
 });
 
-app.MapGet("/panel", async (HttpContext ctx) =>
+// 控制面板：根路径 / 与 /panel 都返回 panel.html
+static async Task ServePanelAsync(HttpContext ctx, IWebHostEnvironment env)
 {
-    // panel.html 查找顺序:ContentRoot(开发/dotnet run) → ContentRoot/bin/...(发布部署)
+    // panel.html 查找顺序:ContentRoot(开发/dotnet run) → ContentRoot/bin/...(发布部署) → BaseDirectory
     var candidates = new[]
     {
-        Path.Combine(app.Environment.ContentRootPath, "panel.html"),
-        Path.Combine(app.Environment.ContentRootPath, "bin", "Debug", $"net{Environment.Version}", "panel.html"),
+        Path.Combine(env.ContentRootPath, "panel.html"),
+        Path.Combine(env.ContentRootPath, "bin", "Debug", $"net{Environment.Version}", "panel.html"),
         Path.Combine(AppContext.BaseDirectory, "panel.html"),
     };
     var path = candidates.FirstOrDefault(File.Exists);
@@ -233,12 +234,10 @@ app.MapGet("/panel", async (HttpContext ctx) =>
     var html = await File.ReadAllTextAsync(path, ctx.RequestAborted);
     ctx.Response.ContentType = "text/html; charset=utf-8";
     await ctx.Response.WriteAsync(html, ctx.RequestAborted);
-});
+}
 
-// [临时诊断] 离线跑一次"停移+多轮分裂",输出共线性/间距指标(排查完删除)
-app.MapGet("/api/diag/linesplit", (int? rounds, int? ticks, float? dirDeg, float? mass, bool? sameTick) =>
-    Results.Json(AstrIO.Server.Diag.LineSplitProbe.Run(
-        rounds ?? 4, ticks ?? 60, dirDeg ?? 0f, mass ?? 20000f, sameTick ?? true)));
+app.MapGet("/", (HttpContext ctx, IWebHostEnvironment env) => ServePanelAsync(ctx, env));
+app.MapGet("/panel", (HttpContext ctx, IWebHostEnvironment env) => ServePanelAsync(ctx, env));
 
 app.MapGet("/api/panel/state", (GameLoop loop) =>
 {
@@ -256,30 +255,39 @@ app.MapGet("/api/panel/state", (GameLoop loop) =>
         .Where(p => p.Cells.Count > 0)
         .OrderByDescending(p => p.MassTotal)
         .Take(8)
-        .Select(p => new { nick = p.Nick + (p.IsBot ? " 🤖" : " 👤"), mass = (int)p.MassTotal, cells = p.Cells.Count })
+        .Select(p => new PanelTopDto(p.Nick + (p.IsBot ? " 🤖" : " 👤"), (int)p.MassTotal, p.Cells.Count))
         .ToList();
-    return Results.Json(new
-    {
-        tick = w.Tick,
-        bots = w.Bots.Count,
-        botTarget = w.BotCount,
-        real,
-        viruses,
-        virusTarget = w.VirusTarget,
-        food,
-        ejected,
-        cells = w.Cells.Count,
-        spawnMass = w.SpawnMass,
-        autoSplitMass = GameWorld.AutoSplitMass,
-        autoSplitEnabled = GameWorld.AutoSplitEnabled,
-        subSpawnEnabled = GameWorld.SubSpawnEnabled,
-        decayScale = GameWorld.DecayScale,
-        ejectSize = GameWorld.EjectSize,
-        ejectSizeLoss = GameWorld.EjectSizeLoss,
-        ejectDistance = GameWorld.EjectDistance,
-        botDifficulty = w.BotDifficulty.ToString(),
-        top,
-    });
+    return Results.Json(new PanelStateDto(
+        Tick: w.Tick,
+        Bots: w.Bots.Count,
+        BotTarget: w.BotCount,
+        Real: real,
+        Viruses: viruses,
+        VirusTarget: w.VirusTarget,
+        Food: food,
+        Ejected: ejected,
+        Cells: w.Cells.Count,
+        SpawnMass: w.SpawnMass,
+        AutoSplitMass: GameWorld.AutoSplitMass,
+        AutoSplitEnabled: GameWorld.AutoSplitEnabled,
+        SubSpawnEnabled: GameWorld.SubSpawnEnabled,
+        DecayScale: GameWorld.DecayScale,
+        EjectSize: GameWorld.EjectSize,
+        EjectSizeLoss: GameWorld.EjectSizeLoss,
+        EjectDistance: GameWorld.EjectDistance,
+        ViewBaseRadius: GameWorld.ViewBaseRadius,
+        ViewMassFactor: GameWorld.ViewMassFactor,
+        ViewCellBonus: GameWorld.ViewCellBonus,
+        ViewMaxRadius: GameWorld.ViewMaxRadius,
+        ViewCulling: GameWorld.ViewCulling,
+        BotDifficulty: w.BotDifficulty.ToString(),
+        Top: top,
+        DominanceNick: w.DominanceNick,
+        DominanceRatio: w.DominanceRatio,
+        DominanceRemainingTicks: w.DominanceArmedTick < 0
+            ? -1
+            : Math.Max(0, AntiDominance.CountdownTicks - (w.Tick - w.DominanceArmedTick)),
+        DominanceWipes: w.DominanceWipes), JsonApiContext.Default.PanelStateDto);
 });
 
 app.MapPost("/api/panel/set", async (HttpContext ctx, GameLoop loop) =>
@@ -342,6 +350,37 @@ app.MapPost("/api/panel/set", async (HttpContext ctx, GameLoop loop) =>
             results.Add($"ejectDistance={GameWorld.EjectDistance}");
             changed = true;
         }
+        // 视野裁剪(float)
+        if (root.TryGetProperty("viewBaseRadius", out var vbrEl) && vbrEl.TryGetSingle(out var vbr))
+        {
+            GameWorld.ViewBaseRadius = Math.Clamp(vbr, 200f, 20000f);
+            results.Add($"viewBaseRadius={GameWorld.ViewBaseRadius}");
+            changed = true;
+        }
+        if (root.TryGetProperty("viewMassFactor", out var vmfEl) && vmfEl.TryGetSingle(out var vmf))
+        {
+            GameWorld.ViewMassFactor = Math.Clamp(vmf, 0f, 50f);
+            results.Add($"viewMassFactor={GameWorld.ViewMassFactor}");
+            changed = true;
+        }
+        if (root.TryGetProperty("viewCellBonus", out var vcbEl) && vcbEl.TryGetSingle(out var vcb))
+        {
+            GameWorld.ViewCellBonus = Math.Clamp(vcb, 0f, 2000f);
+            results.Add($"viewCellBonus={GameWorld.ViewCellBonus}");
+            changed = true;
+        }
+        if (root.TryGetProperty("viewMaxRadius", out var vmrEl) && vmrEl.TryGetSingle(out var vmr))
+        {
+            GameWorld.ViewMaxRadius = Math.Clamp(vmr, 200f, 40000f);
+            results.Add($"viewMaxRadius={GameWorld.ViewMaxRadius}");
+            changed = true;
+        }
+        if (root.TryGetProperty("viewCulling", out var vcEl) && (vcEl.ValueKind == JsonValueKind.True || vcEl.ValueKind == JsonValueKind.False))
+        {
+            GameWorld.ViewCulling = vcEl.GetBoolean();
+            results.Add($"viewCulling={GameWorld.ViewCulling}");
+            changed = true;
+        }
         // 开关类(bool)
         if (root.TryGetProperty("autoSplitEnabled", out var aseEl) && (aseEl.ValueKind == JsonValueKind.True || aseEl.ValueKind == JsonValueKind.False))
         {
@@ -381,22 +420,22 @@ app.MapPost("/api/panel/set", async (HttpContext ctx, GameLoop loop) =>
         }
     }
     finally { WorldLock.Unlock(); }
-    return Results.Json(new { ok = true, results });
+    return Results.Json(new PanelSetDto(true, results), JsonApiContext.Default.PanelSetDto);
 });
 
-/// <summary>在线玩家/bot 全列表（击杀面板用）。</summary>
+/// <summary>在线玩家/bot 全列表(击杀面板用)。</summary>
 app.MapGet("/api/panel/players", (GameLoop loop) =>
 {
     WorldLock.Lock();
-    try { return Results.Json(loop.WorldRef.ListPlayers()); }
+    try { return Results.Json(loop.WorldRef.ListPlayers(), JsonApiContext.Default.ListPlayerRowDto); }
     finally { WorldLock.Unlock(); }
 });
 
-/// <summary>bot AI 诊断快照（状态机/威胁/猎物/位置/分组）—— 调试与自动化测试用。</summary>
+/// <summary>bot AI 诊断快照(状态机/威胁/猎物/位置/分组)—— 调试与自动化测试用。</summary>
 app.MapGet("/api/panel/ai", (GameLoop loop) =>
 {
     WorldLock.Lock();
-    try { return Results.Json(loop.WorldRef.ListBotAi()); }
+    try { return Results.Json(loop.WorldRef.ListBotAi(), JsonApiContext.Default.ListBotAiRowDto); }
     finally { WorldLock.Unlock(); }
 });
 // ---------- 回放上传/下载（存 ContentRoot/replays/,不经面板认证——游戏功能） ----------
@@ -414,19 +453,19 @@ app.MapPost("/api/replay/upload", async (HttpContext ctx) =>
 {
     var req = ctx.Request;
     if (!req.HasFormContentType)
-        return Results.BadRequest(new { error = "form-data required" });
+        return Results.Json(new ApiErrorDto("form-data required"), JsonApiContext.Default.ApiErrorDto, statusCode: 400);
     var form = await req.ReadFormAsync(ctx.RequestAborted);
     var file = form.Files.GetFile("file");
     if (file == null || file.Length == 0)
-        return Results.BadRequest(new { error = "file missing" });
+        return Results.Json(new ApiErrorDto("file missing"), JsonApiContext.Default.ApiErrorDto, statusCode: 400);
     if (file.Length > 20 * 1024 * 1024)
-        return Results.BadRequest(new { error = "too large (>20MB)" });
+        return Results.Json(new ApiErrorDto("too large (>20MB)"), JsonApiContext.Default.ApiErrorDto, statusCode: 400);
     var name = Path.GetFileName(file.FileName);
     if (!ValidReplayName(name))
-        return Results.BadRequest(new { error = "bad name" });
+        return Results.Json(new ApiErrorDto("bad name"), JsonApiContext.Default.ApiErrorDto, statusCode: 400);
     await using var fs = File.Create(Path.Combine(replayDir, name));
     await file.CopyToAsync(fs, ctx.RequestAborted);
-    return Results.Json(new { ok = true, name, size = file.Length });
+    return Results.Json(new ReplayUploadDto(true, name, file.Length), JsonApiContext.Default.ReplayUploadDto);
 }).DisableAntiforgery();
 
 /// <summary>列出服务器上全部回放(名字+大小+时间,倒序)。</summary>
@@ -435,18 +474,18 @@ app.MapGet("/api/replay/list", () =>
     var list = Directory.GetFiles(replayDir, "*.astr.io")
         .Select(p => new FileInfo(p))
         .OrderByDescending(f => f.Name)
-        .Select(f => new { name = f.Name, size = f.Length, at = f.LastWriteTimeUtc })
+        .Select(f => new ReplayRowDto(f.Name, f.Length, f.LastWriteTimeUtc))
         .ToList();
-    return Results.Json(list);
+    return Results.Json(list, JsonApiContext.Default.ListReplayRowDto);
 });
 
 /// <summary>下载回放(浏览器直接存盘;手机上由下载管理器接管)。</summary>
 app.MapGet("/api/replay/download/{name}", (string name) =>
 {
-    if (!ValidReplayName(name)) return Results.BadRequest(new { error = "bad name" });
+    if (!ValidReplayName(name)) return Results.Json(new ApiErrorDto("bad name"), JsonApiContext.Default.ApiErrorDto, statusCode: 400);
     var p = Path.Combine(replayDir, name);
     return File.Exists(p)
         ? Results.File(p, "application/octet-stream", name)
-        : Results.NotFound(new { error = "not found" });
+        : Results.Json(new ApiErrorDto("not found"), JsonApiContext.Default.ApiErrorDto, statusCode: 404);
 });
 app.Run();

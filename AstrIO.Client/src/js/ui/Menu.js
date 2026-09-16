@@ -478,8 +478,17 @@ export default class Menu {
     const poll = async () => {
       const regionHost = gameConnection.regionHosts[this.region];
       // 亚洲服:本地 C# 服的 server-info 挂在 HTTP 控制端口 4002(游戏端口只收 WS)
-      const base = regionHost === 'localhost' ? 'http://localhost:4002'
-        : regionHost ? 'https://' + regionHost : '';
+      // 亚洲服:本地/自建 C# 服的 server-info 挂在 HTTP 控制端口 4002(游戏端口只收 WS)。
+      // 自定义地址支持 host 或 host:port:含端口则沿用,否则补 4002;协议恒为 http(无 TLS)。
+      // 欧美服为线上 HTTPS 服务,直接 https://<域名>。
+      let base;
+      if (this.region === 'asia') {
+        base = (!regionHost || regionHost === 'localhost')
+          ? 'http://localhost:4002'
+          : 'http://' + (regionHost.indexOf(':') >= 0 ? regionHost : regionHost + ':4002');
+      } else {
+        base = regionHost ? 'https://' + regionHost : '';
+      }
       for (const mode of modes) {
         try {
           const response = await fetch(base + '/server-info/' + mode);
